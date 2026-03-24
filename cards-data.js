@@ -1,5 +1,6 @@
 (function () {
   const STORAGE_KEY = 'bitHappenPlanCards_v1';
+  const STORAGE_META_KEY = 'bitHappenPlanCardsMeta_v1';
 
   const defaultCards = [
     {
@@ -664,20 +665,54 @@
       .sort((a, b) => a.priority - b.priority || a.title.localeCompare(b.title, 'ko'));
   }
 
+  const SORTED_DEFAULTS = sortCards(defaultCards);
+  const DEFAULTS_SIGNATURE = JSON.stringify(SORTED_DEFAULTS);
+
+  function readStorageMeta() {
+    try {
+      const raw = localStorage.getItem(STORAGE_META_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function writeStorageMeta() {
+    localStorage.setItem(
+      STORAGE_META_KEY,
+      JSON.stringify({
+        defaultsSignature: DEFAULTS_SIGNATURE,
+        updatedAt: Date.now(),
+      })
+    );
+  }
+
+  function resetStorageToDefaults() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(SORTED_DEFAULTS));
+    writeStorageMeta();
+    return clone(SORTED_DEFAULTS);
+  }
+
   function getCards() {
     try {
+      const meta = readStorageMeta();
+      const isCompatible = meta && meta.defaultsSignature === DEFAULTS_SIGNATURE;
+      if (!isCompatible) {
+        return resetStorageToDefaults();
+      }
+
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) {
-        return sortCards(defaultCards);
+        return clone(SORTED_DEFAULTS);
       }
 
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed) || parsed.length === 0) {
-        return sortCards(defaultCards);
+        return resetStorageToDefaults();
       }
 
       const stored = sortCards(parsed);
-      const defaults = sortCards(defaultCards);
+      const defaults = SORTED_DEFAULTS;
       const existingIds = new Set(stored.map((card) => card.id));
       const merged = [...stored];
 
@@ -689,20 +724,19 @@
 
       return sortCards(merged);
     } catch (_error) {
-      return sortCards(defaultCards);
+      return clone(SORTED_DEFAULTS);
     }
   }
 
   function saveCards(cards) {
     const normalized = sortCards(cards);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+    writeStorageMeta();
     return normalized;
   }
 
   function resetCards() {
-    const reset = sortCards(defaultCards);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reset));
-    return reset;
+    return resetStorageToDefaults();
   }
 
   window.BitHappenCardStore = {
