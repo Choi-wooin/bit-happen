@@ -352,7 +352,7 @@
       ],
       ctaLabel: '상담 요청',
       ctaStyle: 'primary',
-      priority: 159,
+      priority: 10,
       span: 2,
       industry: '스포츠 테크, 코칭 플랫폼',
       period: '4-8주 구축',
@@ -368,7 +368,7 @@
       features: ['스윙 자세 추정', '프로 선수 동작 비교', '코칭 리포트 자동 생성'],
       ctaLabel: '상담 요청',
       ctaStyle: 'primary',
-      priority: 161,
+      priority: 20,
       span: 2,
       industry: '스포츠 테크, 교육',
       period: '4-7주 적용',
@@ -670,6 +670,7 @@
       if (!raw) {
         return sortCards(defaultCards);
       }
+
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed) || parsed.length === 0) {
         return sortCards(defaultCards);
@@ -680,7 +681,6 @@
       const existingIds = new Set(stored.map((card) => card.id));
       const merged = [...stored];
 
-      // Keep user edits while automatically appending newly added default cards.
       defaults.forEach((card) => {
         if (!existingIds.has(card.id)) {
           merged.push(card);
@@ -700,8 +700,9 @@
   }
 
   function resetCards() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(sortCards(defaultCards)));
-    return sortCards(defaultCards);
+    const reset = sortCards(defaultCards);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reset));
+    return reset;
   }
 
   window.BitHappenCardStore = {

@@ -2,6 +2,7 @@ const form = document.getElementById('card-form');
 const listRoot = document.getElementById('card-list');
 const resetButton = document.getElementById('reset-cards');
 const createNewButton = document.getElementById('create-new');
+const exportCardsSourceButton = document.getElementById('export-cards-source');
 
 const fields = {
   id: document.getElementById('card-id'),
@@ -27,6 +28,27 @@ function getCards() {
 
 function saveCards(cards) {
   return window.BitHappenCardStore.saveCards(cards);
+}
+
+function buildDefaultCardsSource(cards) {
+  return `const defaultCards = ${JSON.stringify(cards, null, 2)};`;
+}
+
+async function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
 }
 
 function clearForm() {
@@ -198,6 +220,16 @@ resetButton.addEventListener('click', () => {
   window.BitHappenCardStore.resetCards();
   clearForm();
   renderList();
+});
+
+exportCardsSourceButton.addEventListener('click', async () => {
+  try {
+    const source = buildDefaultCardsSource(getCards());
+    await copyText(source);
+    alert('현재 카드 상태를 cards-data.js용 코드로 복사했습니다. cards-data.js의 defaultCards 블록에 붙여넣어 저장하세요.');
+  } catch (_error) {
+    alert('코드 복사에 실패했습니다. 다시 시도해 주세요.');
+  }
 });
 
 clearForm();
