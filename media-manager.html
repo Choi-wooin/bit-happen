@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BIT HAPPENS | Media Upload Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Manrope:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="media-manager.css" />
+  </head>
+  <body>
+    <header class="manager-header">
+      <h1>Media Upload Manager</h1>
+      <p>카드별 상세 페이지용 이미지/동영상을 관리합니다. 배포 반영은 media-library.js 파일 코드 복사를 통해 진행합니다.</p>
+      <div class="header-actions">
+        <a href="index.html">메인 페이지</a>
+        <a href="manager.html">카드 관리자</a>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel form-panel">
+        <h2>미디어 업로드</h2>
+        <form id="upload-form">
+          <label>연결할 솔루션 카드
+            <select id="card-id" required></select>
+          </label>
+
+          <label>미디어 제목(선택)
+            <input id="title" placeholder="예: 스윙 분석 대시보드" />
+          </label>
+
+          <label>이미지/동영상 파일
+            <input id="files" type="file" accept="image/*,video/*" multiple required />
+          </label>
+
+          <p class="hint">여러 파일을 한 번에 업로드할 수 있습니다. 용량이 큰 파일은 브라우저 저장 한계에 걸릴 수 있습니다.</p>
+
+          <section class="url-section">
+            <h3>미디어 URL 등록 (권장)</h3>
+            <label>URL 타입
+              <select id="url-type">
+                <option value="auto">자동 판별</option>
+                <option value="image">이미지</option>
+                <option value="video">동영상</option>
+              </select>
+            </label>
+            <label>미디어 파일명
+              <div class="url-input-with-prefix">
+                <span class="url-prefix">assets/media/</span>
+                <input id="media-url" placeholder="예: demo.jpg 또는 demo.mp4" />
+              </div>
+            </label>
+            <label>포스터 이미지 URL(선택)
+              <input id="poster-url" placeholder="예: assets/media/demo-poster.jpg" />
+            </label>
+            <div class="url-actions">
+              <button type="button" id="preview-media-url">URL 미리보기</button>
+              <button type="button" id="add-media-url">URL로 미디어 추가</button>
+            </div>
+            <p class="hint">대용량 파일은 업로드 대신 URL 등록을 사용하세요.</p>
+            <div id="url-preview" class="url-preview">
+              <p class="empty">미리보기할 URL을 입력해 주세요.</p>
+            </div>
+          </section>
+
+          <div class="form-actions">
+            <button type="submit">업로드 저장</button>
+            <button type="button" id="reset-library">라이브러리 초기화</button>
+          </div>
+        </form>
+
+        <section class="selected-preview-section">
+          <h3>선택 파일 미리보기</h3>
+          <p class="hint">업로드 저장 전에 선택한 이미지/동영상을 확인할 수 있습니다.</p>
+          <div id="selected-preview" class="selected-preview-list"></div>
+        </section>
+      </section>
+
+      <section class="panel list-panel">
+        <div class="list-head">
+          <h2>미디어 라이브러리</h2>
+          <div class="head-actions">
+            <select id="filter-card"></select>
+            <button type="button" id="copy-json">선택 카드 JSON 복사</button>
+            <button type="button" id="copy-library-file">라이브러리 파일 코드 복사</button>
+          </div>
+        </div>
+        <p class="hint">라이브러리 파일 코드 복사 후 media-library.js에 반영하면, 다른 기기/브라우저에서도 동일하게 표시됩니다.</p>
+        <div id="library" class="library"></div>
+      </section>
+    </main>
+
+    <script src="cards-data.js"></script>
+    <script src="media-library.js"></script>
+    <script src="media-manager.js"></script>
+  </body>
+</html>

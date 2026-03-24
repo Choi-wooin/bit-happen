@@ -7,6 +7,181 @@ function esc(value) {
     .replaceAll("'", '&#39;');
 }
 
+function mediaTypeLabel(type) {
+  return type === 'video' ? 'VIDEO' : 'IMAGE';
+}
+
+function normalizeMediaItems(items) {
+  if (!Array.isArray(items)) return [];
+
+  return items
+    .map((item) => {
+      const type = item?.type === 'video' ? 'video' : 'image';
+      const src = String(item?.src || '').trim();
+      if (!src) return null;
+
+      return {
+        type,
+        src,
+        title: String(item?.title || '').trim(),
+        poster: String(item?.poster || '').trim(),
+      };
+    })
+    .filter(Boolean);
+}
+
+function getLibraryMediaItemsByCardId(cardId) {
+  if (!cardId) return [];
+
+  try {
+    const raw = localStorage.getItem('bitHappenMediaLibrary_v1');
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+
+    return normalizeMediaItems(
+      parsed
+        .filter((item) => item && item.cardId === cardId)
+        .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+        .map((item) => ({
+          type: item.type,
+          src: item.src,
+          title: item.title,
+          poster: item.poster,
+        }))
+    );
+  } catch (_error) {
+    return [];
+  }
+}
+
+function renderMediaSection(mediaItems) {
+  if (!mediaItems.length) {
+    return `
+      <section class="section">
+        <h2>이미지 / 동영상</h2>
+        <p class="media-empty">등록된 미디어가 없습니다.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="section" id="media-section">
+      <div class="media-head">
+        <h2>이미지 / 동영상</h2>
+        <p class="media-meta">총 ${mediaItems.length}개</p>
+      </div>
+      <div class="media-scroller" id="media-scroller">
+        ${mediaItems
+          .map((item, index) => {
+            const caption = item.title ? `<p class="media-caption">${esc(item.title)}</p>` : '';
+            const tag = `<span class="media-type">${mediaTypeLabel(item.type)}</span>`;
+
+            const body =
+              item.type === 'video'
+                ? `<video preload="metadata" playsinline ${item.poster ? `poster="${esc(item.poster)}"` : ''}><source src="${esc(
+                    item.src
+                  )}" /></video><span class="media-video-icon">▶</span>`
+                : `<img src="${esc(item.src)}" alt="${esc(item.title || `media-${index + 1}`)}" loading="lazy" decoding="async" />`;
+
+            return `
+              <article class="media-card">
+                <button type="button" class="media-frame" data-media-index="${index}">
+                  ${tag}
+                  ${body}
+                </button>
+                ${caption}
+              </article>
+            `;
+          })
+          .join('')}
+      </div>
+    </section>
+  `;
+}
+
+function attachMediaInteractions(mediaItems) {
+  const frames = Array.from(document.querySelectorAll('.media-frame'));
+  if (!frames.length) return;
+
+  frames.forEach((frame) => {
+    const mediaEl = frame.querySelector('img, video');
+    if (!mediaEl) return;
+
+    const applyRatio = (w, h) => {
+      if (!w || !h) return;
+      frame.style.setProperty('--ratio', (w / h).toFixed(4));
+    };
+
+    if (mediaEl.tagName === 'IMG') {
+      const img = mediaEl;
+      if (img.complete && img.naturalWidth && img.naturalHeight) {
+        applyRatio(img.naturalWidth, img.naturalHeight);
+      } else {
+        img.addEventListener('load', () => applyRatio(img.naturalWidth, img.naturalHeight), { once: true });
+      }
+    } else {
+      const video = mediaEl;
+      if (video.videoWidth && video.videoHeight) {
+        applyRatio(video.videoWidth, video.videoHeight);
+      } else {
+        video.addEventListener('loadedmetadata', () => applyRatio(video.videoWidth, video.videoHeight), { once: true });
+      }
+    }
+  });
+
+  const modal = document.createElement('div');
+  modal.className = 'media-modal';
+  modal.innerHTML = `
+    <div class="media-modal-inner">
+      <div class="media-modal-top">
+        <strong id="media-modal-title"></strong>
+        <button type="button" class="media-modal-close" id="media-modal-close">닫기</button>
+      </div>
+      <div class="media-modal-body" id="media-modal-body"></div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const modalTitle = modal.querySelector('#media-modal-title');
+  const modalBody = modal.querySelector('#media-modal-body');
+  const modalClose = modal.querySelector('#media-modal-close');
+
+  const openModal = (index) => {
+    const media = mediaItems[index];
+    if (!media) return;
+
+    modal.classList.add('open');
+    modalTitle.textContent = media.title || `${mediaTypeLabel(media.type)} ${index + 1}`;
+    if (media.type === 'video') {
+      modalBody.innerHTML = `<video controls autoplay playsinline ${
+        media.poster ? `poster="${esc(media.poster)}"` : ''
+      }><source src="${esc(media.src)}" /></video>`;
+    } else {
+      modalBody.innerHTML = `<img src="${esc(media.src)}" alt="${esc(media.title || `media-${index + 1}`)}" />`;
+    }
+  };
+
+  const closeModal = () => {
+    modal.classList.remove('open');
+    modalBody.innerHTML = '';
+  };
+
+  frames.forEach((frame) => {
+    frame.addEventListener('click', () => {
+      const idx = Number(frame.getAttribute('data-media-index'));
+      openModal(idx);
+    });
+  });
+
+  modalClose.addEventListener('click', closeModal);
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) closeModal();
+  });
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeModal();
+  });
+}
+
 const detailTextByGroup = {
   kiosk: {
     pains: ['현장 대기시간 증가', '운영 인력 부담 증가', '분산 단말 관리 복잡성'],
@@ -122,6 +297,10 @@ function render() {
   const howItems = override?.how || groupText.how;
   const scenarioItems = override?.scenarios || groupText.scenarios;
   const integrationItems = override?.integration || groupText.integration;
+  const overrideMedia = normalizeMediaItems(override?.media || []);
+  const cardMedia = normalizeMediaItems(card.media || []);
+  const libraryMedia = getLibraryMediaItemsByCardId(card.id);
+  const mediaItems = libraryMedia.length ? libraryMedia : overrideMedia.length ? overrideMedia : cardMedia;
 
   const features = featureItems.map((item) => `<li>${esc(item)}</li>`).join('');
   const pains = painItems.map((item) => `<li>${esc(item)}</li>`).join('');
@@ -208,6 +387,8 @@ function render() {
       </article>
     </section>
 
+    ${renderMediaSection(mediaItems)}
+
     ${techSpecSection}
 
     <section class="section grid-3">
@@ -235,6 +416,8 @@ function render() {
       <div class="related-list">${related || '<p>관련 솔루션이 없습니다.</p>'}</div>
     </section>
   `;
+
+  attachMediaInteractions(mediaItems);
 }
 
 render();

@@ -1,0 +1,555 @@
+const STORAGE_KEY = 'bitHappenMediaLibrary_v1';
+const LIBRARY_FILE_NAME = 'media-library.js';
+const MEDIA_BASE_PATH = 'assets/media/';
+
+const form = document.getElementById('upload-form');
+const cardSelect = document.getElementById('card-id');
+const fileInput = document.getElementById('files');
+const titleInput = document.getElementById('title');
+const urlTypeSelect = document.getElementById('url-type');
+const mediaUrlInput = document.getElementById('media-url');
+const posterUrlInput = document.getElementById('poster-url');
+const previewMediaUrlButton = document.getElementById('preview-media-url');
+const addMediaUrlButton = document.getElementById('add-media-url');
+const resetButton = document.getElementById('reset-library');
+const filterSelect = document.getElementById('filter-card');
+const copyJsonButton = document.getElementById('copy-json');
+const copyLibraryFileButton = document.getElementById('copy-library-file');
+const libraryRoot = document.getElementById('library');
+const selectedPreviewRoot = document.getElementById('selected-preview');
+const urlPreviewRoot = document.getElementById('url-preview');
+const MAX_VIDEO_UPLOAD_BYTES = 10 * 1024 * 1024;
+let selectedPreviewUrls = [];
+
+function esc(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function getCards() {
+  if (!window.BitHappenCardStore) return [];
+  return window.BitHappenCardStore.getCards().filter((card) => card.enabled !== false);
+}
+
+function loadLibrary() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    }
+
+    const sourceItems = window.BitHappenMediaLibrary?.items;
+    if (Array.isArray(sourceItems)) {
+      return sourceItems.map((item) => ({ ...item }));
+    }
+
+    return [];
+  } catch (_error) {
+    const sourceItems = window.BitHappenMediaLibrary?.items;
+    return Array.isArray(sourceItems) ? sourceItems.map((item) => ({ ...item })) : [];
+  }
+}
+
+function saveLibrary(items) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  } catch (error) {
+    if (error && error.name === 'QuotaExceededError') {
+      throw new Error('브라우저 저장 공간이 부족합니다. 동영상은 assets 폴더 경로(URL) 방식으로 등록해 주세요.');
+    }
+    throw error;
+  }
+}
+
+function formatLibraryFileContent(items) {
+  const payload = {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    items,
+  };
+
+  return `window.BitHappenMediaLibrary = ${JSON.stringify(payload, null, 2)};`;
+}
+
+function toDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function getImageSize(src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.naturalWidth || 0, height: img.naturalHeight || 0 });
+    img.onerror = () => resolve({ width: 0, height: 0 });
+    img.src = src;
+  });
+}
+
+function getVideoSize(src) {
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    video.preload = 'metadata';
+    video.playsInline = true;
+    const fallback = setTimeout(() => resolve({ width: 0, height: 0 }), 5000);
+    video.onloadedmetadata = () => {
+      clearTimeout(fallback);
+      resolve({ width: video.videoWidth || 0, height: video.videoHeight || 0 });
+    };
+    video.onerror = () => {
+      clearTimeout(fallback);
+      resolve({ width: 0, height: 0 });
+    };
+    video.src = src;
+  });
+}
+
+async function getMediaInfo(type, src) {
+  if (type === 'video') {
+    return getVideoSize(src);
+  }
+  return getImageSize(src);
+}
+
+function detectMediaType(file) {
+  if (file.type.startsWith('video/')) return 'video';
+  if (file.type.startsWith('image/')) return 'image';
+  return null;
+}
+
+function detectMediaTypeFromUrl(url) {
+  const lower = String(url || '').toLowerCase();
+  if (/\.(mp4|webm|ogg|mov)(\?|#|$)/.test(lower)) return 'video';
+  if (/\.(png|jpg|jpeg|webp|gif|bmp|svg)(\?|#|$)/.test(lower)) return 'image';
+  return null;
+}
+
+function normalizeMediaFileName(value) {
+  const fileName = String(value || '').trim();
+  if (!fileName) return '';
+
+  if (fileName.includes('/') || fileName.includes('\\')) {
+    return null;
+  }
+
+  return fileName;
+}
+
+function toMediaAssetUrl(fileName) {
+  return `${MEDIA_BASE_PATH}${fileName}`;
+}
+
+function resolveUrlMediaType(url, selectedType) {
+  const picked = String(selectedType || 'auto');
+  const detectedType = detectMediaTypeFromUrl(url);
+  return picked === 'auto' ? detectedType : picked;
+}
+
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '-';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const idx = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** idx;
+  return `${value.toFixed(value >= 10 || idx === 0 ? 0 : 1)} ${units[idx]}`;
+}
+
+function getDisplayFileName(item) {
+  const explicit = String(item?.fileName || '').trim();
+  if (explicit) return explicit;
+
+  const src = String(item?.src || '').trim();
+  if (!src) return '-';
+  const clean = src.split('#')[0].split('?')[0];
+  const extracted = clean.split('/').pop();
+  return extracted || '-';
+}
+
+function clearSelectedPreview() {
+  selectedPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+  selectedPreviewUrls = [];
+  selectedPreviewRoot.innerHTML = '<p class="empty">선택된 파일이 없습니다.</p>';
+}
+
+function attachRatioForPreview(frame) {
+  const mediaEl = frame.querySelector('img, video');
+  if (!mediaEl) return;
+
+  const applyRatio = (w, h) => {
+    if (!w || !h) return;
+    frame.style.setProperty('--ratio', (w / h).toFixed(4));
+  };
+
+  if (mediaEl.tagName === 'IMG') {
+    const img = mediaEl;
+    if (img.complete && img.naturalWidth && img.naturalHeight) {
+      applyRatio(img.naturalWidth, img.naturalHeight);
+    } else {
+      img.addEventListener('load', () => applyRatio(img.naturalWidth, img.naturalHeight), { once: true });
+    }
+    return;
+  }
+
+  const video = mediaEl;
+  if (video.videoWidth && video.videoHeight) {
+    applyRatio(video.videoWidth, video.videoHeight);
+  } else {
+    video.addEventListener('loadedmetadata', () => applyRatio(video.videoWidth, video.videoHeight), { once: true });
+  }
+}
+
+function renderSelectedPreview(files) {
+  if (!files.length) {
+    clearSelectedPreview();
+    return;
+  }
+
+  clearSelectedPreview();
+  const validFiles = files.filter((file) => detectMediaType(file));
+  if (!validFiles.length) {
+    selectedPreviewRoot.innerHTML = '<p class="empty">미리보기 가능한 파일이 없습니다.</p>';
+    return;
+  }
+
+  selectedPreviewRoot.innerHTML = validFiles
+    .map((file, index) => {
+      const type = detectMediaType(file);
+      const objectUrl = URL.createObjectURL(file);
+      selectedPreviewUrls.push(objectUrl);
+      const mediaType = type === 'video' ? 'VIDEO' : 'IMAGE';
+      const preview =
+        type === 'video'
+          ? `<video src="${esc(objectUrl)}" preload="metadata" muted playsinline></video>`
+          : `<img src="${esc(objectUrl)}" alt="${esc(file.name)}" loading="lazy" />`;
+
+      return `
+        <article class="selected-preview-item">
+          <div class="media-frame" data-preview-index="${index}">
+            <span class="media-type">${mediaType}</span>
+            ${preview}
+          </div>
+          <div class="meta">
+            <strong>${esc(file.name)}</strong>
+            <p>${esc(type || 'unknown')} / ${formatBytes(file.size)}</p>
+          </div>
+        </article>
+      `;
+    })
+    .join('');
+
+  Array.from(selectedPreviewRoot.querySelectorAll('.media-frame')).forEach((frame) => attachRatioForPreview(frame));
+}
+
+function makeCardOptions() {
+  const cards = getCards();
+  const options = cards
+    .map((card) => `<option value="${card.id}">${card.title} (${String(card.group || '').toUpperCase()})</option>`)
+    .join('');
+
+  cardSelect.innerHTML = options;
+  filterSelect.innerHTML = `<option value="all">전체 카드</option>${options}`;
+}
+
+function currentCardTitle(cardId) {
+  const card = getCards().find((item) => item.id === cardId);
+  return card ? card.title : cardId;
+}
+
+function renderLibrary() {
+  const library = loadLibrary();
+  const filterId = filterSelect.value || 'all';
+  const list = filterId === 'all' ? library : library.filter((item) => item.cardId === filterId);
+
+  if (list.length === 0) {
+    libraryRoot.innerHTML = '<p class="empty">등록된 미디어가 없습니다.</p>';
+    return;
+  }
+
+  libraryRoot.innerHTML = list
+    .map((item) => {
+      const ratio = item.width && item.height ? (item.width / item.height).toFixed(4) : '1.778';
+      const title = item.title || item.fileName || '제목 없음';
+      const mediaType = item.type === 'video' ? 'VIDEO' : 'IMAGE';
+      const preview =
+        item.type === 'video'
+          ? `<video src="${esc(item.src)}" ${item.poster ? `poster="${esc(item.poster)}"` : ''} preload="metadata" muted playsinline></video>`
+          : `<img src="${esc(item.src)}" alt="${esc(title)}" loading="lazy" />`;
+      const sourceLabel = item.sourceMode === 'url' ? 'URL 등록' : '파일 업로드';
+      return `
+        <article class="media-item" data-id="${item.id}">
+          <div class="media-frame" style="--ratio:${ratio}">
+            <span class="media-type">${mediaType}</span>
+            ${preview}
+          </div>
+          <div class="meta">
+            <strong>${esc(title)}</strong>
+            <p>파일명: ${esc(getDisplayFileName(item))}</p>
+            <p>카드: ${esc(currentCardTitle(item.cardId))}</p>
+            <p>저장 방식: ${esc(sourceLabel)}</p>
+            <p>${item.width || '-'} x ${item.height || '-'} / ${new Date(item.createdAt).toLocaleString('ko-KR')}</p>
+          </div>
+          <div class="item-actions">
+            <button type="button" data-action="delete">삭제</button>
+          </div>
+        </article>
+      `;
+    })
+    .join('');
+
+  Array.from(libraryRoot.querySelectorAll('[data-action="delete"]')).forEach((button) => {
+    button.addEventListener('click', () => {
+      const card = button.closest('.media-item');
+      const id = card?.getAttribute('data-id');
+      if (!id) return;
+
+      const next = loadLibrary().filter((item) => item.id !== id);
+      saveLibrary(next);
+      renderLibrary();
+    });
+  });
+}
+
+function renderUrlPreview() {
+  const inputValue = String(mediaUrlInput.value || '').trim();
+  const poster = String(posterUrlInput.value || '').trim();
+  const selectedType = String(urlTypeSelect.value || 'auto');
+
+  if (!inputValue) {
+    urlPreviewRoot.innerHTML = '<p class="empty">미리보기할 URL을 입력해 주세요.</p>';
+    return;
+  }
+
+  const fileName = normalizeMediaFileName(inputValue);
+  if (fileName === null) {
+    urlPreviewRoot.innerHTML = '<p class="empty">파일명만 입력해 주세요. 경로 구분자(/, \\)는 사용할 수 없습니다.</p>';
+    return;
+  }
+
+  const url = toMediaAssetUrl(fileName);
+
+  const mediaType = resolveUrlMediaType(url, selectedType);
+  if (!mediaType) {
+    urlPreviewRoot.innerHTML =
+      '<p class="empty">URL 타입 자동 판별에 실패했습니다. URL 타입을 직접 선택해 주세요.</p>';
+    return;
+  }
+
+  const title = String(titleInput.value || '').trim() || fileName || mediaType;
+  const preview =
+    mediaType === 'video'
+      ? `<video src="${esc(url)}" ${poster ? `poster="${esc(poster)}"` : ''} preload="metadata" muted playsinline></video>`
+      : `<img src="${esc(url)}" alt="${esc(title)}" loading="lazy" />`;
+
+  urlPreviewRoot.innerHTML = `
+    <article class="media-item">
+      <div class="media-frame">
+        <span class="media-type">${mediaType === 'video' ? 'VIDEO' : 'IMAGE'}</span>
+        ${preview}
+      </div>
+      <div class="meta">
+        <strong>${esc(title)}</strong>
+        <p>${esc(mediaType)} / URL 미리보기</p>
+      </div>
+    </article>
+  `;
+
+  const frame = urlPreviewRoot.querySelector('.media-frame');
+  if (frame) attachRatioForPreview(frame);
+}
+
+async function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+}
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const files = Array.from(fileInput.files || []);
+  if (!files.length) return;
+
+  const cardId = cardSelect.value;
+  const title = titleInput.value.trim();
+  const current = loadLibrary();
+  let uploadedCount = 0;
+
+  try {
+    for (const file of files) {
+      const mediaType = detectMediaType(file);
+      if (!mediaType) continue;
+
+      if (mediaType === 'video' && file.size > MAX_VIDEO_UPLOAD_BYTES) {
+        throw new Error(
+          `동영상 ${file.name} 용량이 너무 큽니다. 현재 브라우저 저장 방식에서는 10MB 이하만 권장됩니다. assets 폴더 경로(URL) 방식 사용을 권장합니다.`
+        );
+      }
+
+      const src = await toDataUrl(file);
+      const size = await getMediaInfo(mediaType, src);
+      current.push({
+        id: `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        cardId,
+        type: mediaType,
+        title: title || file.name,
+        fileName: file.name,
+        src,
+        poster: '',
+        sourceMode: 'dataurl',
+        width: size.width,
+        height: size.height,
+        createdAt: Date.now(),
+      });
+      uploadedCount += 1;
+    }
+
+    if (uploadedCount === 0) {
+      alert('업로드 가능한 파일이 없습니다. 이미지 또는 동영상 파일을 선택해 주세요.');
+      return;
+    }
+
+    saveLibrary(current);
+    form.reset();
+    clearSelectedPreview();
+    makeCardOptions();
+    renderLibrary();
+    alert(`${uploadedCount}개 파일 업로드를 저장했습니다.`);
+  } catch (error) {
+    alert(error instanceof Error ? error.message : '업로드 저장 중 오류가 발생했습니다.');
+  }
+});
+
+fileInput.addEventListener('change', () => {
+  const files = Array.from(fileInput.files || []);
+  renderSelectedPreview(files);
+});
+
+addMediaUrlButton.addEventListener('click', async () => {
+  const cardId = cardSelect.value;
+  const inputValue = String(mediaUrlInput.value || '').trim();
+  const selectedType = String(urlTypeSelect.value || 'auto');
+  const poster = String(posterUrlInput.value || '').trim();
+  const title = String(titleInput.value || '').trim();
+
+  if (!cardId) {
+    alert('카드를 먼저 선택해 주세요.');
+    return;
+  }
+
+  if (!inputValue) {
+    alert('미디어 파일명을 입력해 주세요.');
+    return;
+  }
+
+  const fileName = normalizeMediaFileName(inputValue);
+  if (fileName === null) {
+    alert('파일명만 입력해 주세요. 경로 구분자(/, \\)는 사용할 수 없습니다.');
+    return;
+  }
+
+  const url = toMediaAssetUrl(fileName);
+
+  const mediaType = resolveUrlMediaType(url, selectedType);
+  if (!mediaType) {
+    alert('URL 타입을 자동 판별하지 못했습니다. 타입을 이미지/동영상으로 직접 선택해 주세요.');
+    return;
+  }
+
+  try {
+    const size = mediaType === 'video' ? await getVideoSize(url) : await getImageSize(url);
+    const current = loadLibrary();
+    current.push({
+      id: `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      cardId,
+      type: mediaType,
+      title: title || fileName || mediaType,
+      fileName: fileName || mediaType,
+      src: url,
+      poster: mediaType === 'video' ? poster : '',
+      sourceMode: 'url',
+      width: size.width,
+      height: size.height,
+      createdAt: Date.now(),
+    });
+    saveLibrary(current);
+    mediaUrlInput.value = '';
+    posterUrlInput.value = '';
+    urlPreviewRoot.innerHTML = '<p class="empty">미리보기할 URL을 입력해 주세요.</p>';
+    renderLibrary();
+    alert(`${mediaType === 'video' ? '동영상' : '이미지'} URL을 라이브러리에 추가했습니다.`);
+  } catch (_error) {
+    alert('미디어 URL 등록 중 오류가 발생했습니다. URL을 확인해 주세요.');
+  }
+});
+
+previewMediaUrlButton.addEventListener('click', renderUrlPreview);
+mediaUrlInput.addEventListener('input', renderUrlPreview);
+posterUrlInput.addEventListener('input', renderUrlPreview);
+urlTypeSelect.addEventListener('change', renderUrlPreview);
+
+filterSelect.addEventListener('change', renderLibrary);
+
+copyJsonButton.addEventListener('click', async () => {
+  const selected = filterSelect.value;
+  if (!selected || selected === 'all') {
+    alert('특정 카드를 선택한 뒤 JSON을 복사해 주세요.');
+    return;
+  }
+
+  const media = loadLibrary()
+    .filter((item) => item.cardId === selected)
+    .map((item) => ({
+      type: item.type === 'video' ? 'video' : 'image',
+      src: item.src,
+      title: item.title,
+      ...(item.poster ? { poster: item.poster } : {}),
+    }));
+
+  if (!media.length) {
+    alert('선택한 카드에 등록된 미디어가 없습니다.');
+    return;
+  }
+
+  const snippet = `media: ${JSON.stringify(media, null, 2)}`;
+  await copyText(snippet);
+  alert('media 배열 코드가 복사되었습니다. solution-detail.js override에 붙여넣으세요.');
+});
+
+resetButton.addEventListener('click', () => {
+  if (!confirm('현재 브라우저 드래프트를 초기화할까요? (소스 파일 media-library.js 값으로 복원됩니다)')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  renderLibrary();
+  form.reset();
+  clearSelectedPreview();
+  renderUrlPreview();
+});
+
+copyLibraryFileButton.addEventListener('click', async () => {
+  const library = loadLibrary();
+  const fileContent = formatLibraryFileContent(library);
+  await copyText(fileContent);
+  alert(`${LIBRARY_FILE_NAME} 반영용 코드가 복사되었습니다. ${LIBRARY_FILE_NAME} 파일 전체 내용을 교체한 뒤 커밋/배포해 주세요.`);
+});
+
+makeCardOptions();
+renderLibrary();
+clearSelectedPreview();
+renderUrlPreview();
