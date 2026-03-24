@@ -1,0 +1,185 @@
+DEVELOPMENT PROPOSAL
+기술 개발 사업 계획서
+주요 기술과 관련 사업
+공항 사업 (Airport) 국내외 공항 연계 사업
+키오스크 사업 (Kiosk) 국내외 키오스크 기반 플랫폼 인프라 사업
+AI 사업 AI 기반 솔루션/서비스 사업
+2026. 03
+목차
+Table of Contents
+2 / 14
+01 공항 사업
+국내외 공항 연계 사업 (HW/SW)
+02 키오스크 사업
+국내외 키오스크 연계 사업 (HW/SW)
+03 AI 사업
+AI 기반 솔루션 / 서비스 사업
+01. 공항 사업
+Project Overview
+3 / 14
+- 사업 실적
+일련번호 공사명 계약연월 착공연월 준공연월
+1 KAC 생체정보 활용 국내선 탑승수속 간소화 시스템 구축 18.06 18.06 18.12
+2 KAC 금융기관 바이오정보 공동활용시스템 구축 19.01 19.01 19.12
+3 KAC 바이오정보 활용 국내선 탑승수속 간소화 시스템 증설 20.01 20.01 20.12
+4 KAC One ID 시스템 확대구축 (1차) 21.01 21.01 21.12
+5 KAC One ID 시스템 확대구축 (2차) 22.01 22.01 22.12
+6 KAC One ID 시스템 유지관리 23.01 23.01 23.12
+7 KAC 국제선 환승시스템 구축 24.01 24.01 24.12
+8 KAC One ID 시스템 외부기관 연계 구축 25.01 25.01 25.12
+01. 공항 사업
+Project Overview
+3 / 14
+- 사업 영역 (실제 사례)
+
+01. 공항 사업
+Project Overview
+3 / 14
+- 사업 영역 (실제 사례)
+
+01. 공항 사업
+Project Overview
+3 / 14
+- 개발 제품
+개발 내역
+• CAS 장비 사용(프로토콜 연동)
+• 원도우 기반 개발
+• .Net Framework 개발, Wpf로 개발, Gui 개발
+및 디자인
+• 국내 14개 공항에 100여대 설치 및 운영
+수하물 측정 장비
+• 윈도우 기반 개발
+• .Net Framework 개발, Wpf로 개발, Gui 개발
+및 디자인
+• Zebra 프린터(3종류), 3M 여권리더기 연동
+• DCS 항공 플랫폼 연계 개발
+개발 내역
+• 윈도우 기반 개발
+• .Net Framework 개발, Wpf로 개발, Gui 
+개발 및 디자인
+• Rexod 프린터, 3M 문서 스캐너 연동
+• DCS 항공 플랫폼 연계 개발
+개발 내역
+원패스 장비
+공항직원이 승객의 탑승권을 받아
+체크인 여부를 확인하는 장비
+개발 내역
+예약한 탑승권을 자동으로
+발급해주는 장비
+승객의 수하물을 자동으로
+붙여주는 장비
+무인 탑승권 발급 장비
+무인 수하물 위탁 장비
+01. 공항 사업
+Project Overview
+3 / 14
+- 개발 제품
+셀프 등록대 셀프 등록대One-ID 스탠드
+01. 공항 사업
+Project Overview
+3 / 14
+- 개발 제품
+
+01. 공항 사업
+Project Overview
+3 / 14
+- 신규 사업 (26’~)
+신규 개발(제작) : Immsec 보안 게이트 => 울산 공항에 납품
+27년도부터 기존 전국 공항 게이트 노후화 장비 교체 사업 진행 예정
+01. 공항 사업
+Project Overview
+3 / 14
+- 적도 기니 bata 공항 게이트
+
+01. 공항 사업
+Project Overview
+3 / 14
+- 설치 모습
+
+01. 공항 사업
+Project Overview
+3 / 14
+- 개발 사례 (Self Bag Drop)
+
+02. 키오스크 사업
+Project Overview
+3 / 14
+- 장비 사례 (키오스크 설계 및 장비 제작, 설치)
+
+02. 키오스크 사업
+Project Overview
+3 / 14
+- 개발 사례
+
+02. 키오스크 사업
+Project Overview
+3 / 14
+- 개발 사례
+
+02. 키오스크 사업
+Project Overview
+3 / 14
+- 개발 사례
+
+02. 키오스크 사업
+Project Overview
+3 / 14
+- 개발 사례
+
+02. 키오스크 사업
+Project Overview
+3 / 14
+- 개발 사례 (전국 병무청)
+
+02. 키오스크 사업
+Project Overview
+3 / 14
+- 개발 사례 (전국 스마트 쉘터)
+
+02. 키오스크 사업
+Project Overview
+3 / 14
+- 전국 고속도로 휴게소
+
+02. 키오스크 사업
+Project Overview
+3 / 14
+- POS CMS 시스템
+
+02. 키오스크 사업
+Project Overview
+3 / 14
+- POS 프로그램
+
+03. AI 사업
+Project Overview
+3 / 14
+- AI Tennis Coaching 시스템
+
+03. AI 사업
+Project Overview
+3 / 14
+- AI Tennis Coaching 시스템
+
+03. AI 사업
+Project Overview
+3 / 14
+- 텔레그램 기반 AI 에이전트
+
+03. AI 사업
+Project Overview
+3 / 14
+- AI 피팅 시스템
+
+03. AI 사업
+Project Overview
+3 / 14
+- 건설사 AI하자보수 검증 플랫폼
+
+03. AI 사업
+Project Overview
+3 / 14
+- 건설사 AI하자보수 검증 플랫폼
+
+Jimin soft History & Portfolio
+THANK YOU

@@ -1,0 +1,345 @@
+AI 프로젝트 기술 소개서
+AI 기반 솔루션 포트폴리오 브리핑
+2026년 3월
+45+
+AI 프로젝트
+10+
+산업 분야
+6+
+AI 기술 영역
+목차
+2
+01
+ 프로젝트 전체 개요
+02
+ 주요 프로그램 소개 (9개 핵심 솔루션)
+03
+ 기타 AI 프로젝트
+04
+ 핵심 기술 스택
+05
+ 유용성 및 실용적 가치
+06
+ 아이디어와 차별성
+07
+ 적용 분야
+프로젝트 전체 개요
+3
+AI 영상/미디어
+QuickClip, SynopsisToScreenplay
+얼굴 인식/생체 인증
+SmartFaceEngine, SSINO Kiosk
+AI 코칭/분석
+AITennisCoaching
+가상 피팅
+LuchDecartAI, VideoVTON
+음성 인식 STT
+Moonshine, Whisper.Net
+스마트 키오스크
+EvanPOS, PetKiosk, FoodTruck
+IoT/센싱
+RuView WiFi, LotteDongTanLED
+건설/품질 검증
+하자보수검증_AI
+자율 연구
+Autoresearch
+글로벌 모니터링
+WorldMonitor
+SmartFaceEngine — 로컬 실시간 얼굴 인식
+4
+개념
+클라우드 의존 없이 로컬에서 동작하는 온디바이스 얼굴
+인식 엔진.
+ONNX Runtime + DirectML GPU 가속으로 실시간 처리.
+99.80%
+LFW 정확도
+10-
+30ms
+GPU 감지 속도
+5명
+동시 인식
+주요 특징
+▸ SCRFD 2.5G KPS 얼굴 감지 모델
+▸ ArcFace ResNet100 Int8 얼굴 인식
+▸ 눈 깜빡임 기반 라이브니스(위조 방지) 탐지
+▸ 1:N 얼굴 매칭 (최대 5명 동시)
+▸ DirectML GPU 가속 지원
+▸ 플랫폼: WPF .NET 8.0 + ONNX Runtime
+QuickClip — AI 원클릭 영상 제작
+5
+개념
+주제 입력만으로 AI가 스크립트 작성, 이미지 생성, 내레
+이션, 편집까지
+완성 영상을 자동 생성. 1분 영상 제작 비용 약 $0.38.
+AI 파이프라인
+주제 입력
+▶
+Claude
+스크립트 ▶
+DALL-E 3
+이미지 ▶
+ElevenLabs
+TTS ▶
+FFmpeg
+편집 ▶
+완성 영상
+$0.38
+1분 영상 제작 비용
+지원 영상 유형
+CF / 제품소개 / 브이로그 / 교육 / 엔터
+테인먼트
+플랫폼: WPF .NET 9.0  |  Ken Burns 효과 + 자막 자동 삽입
+SynopsisToScreenplay — AI 각본 생성 파이프라인
+6
+개념
+1-3페이지 시놉시스를 입력하면 AI가 분석 → 각본 작성
+→
+스토리보드 → 나레이션 → AI 영상까지 자동 생성.
+핵심 기술
+▸ Claude API (스크립트/각본)
+▸ DALL-E 3 (스토리보드)
+▸ ElevenLabs (나레이션)
+▸ Runway (AI 영상)
+9단계 자동화 파이프라인
+STEP 0-2
+분석가
+시놉시스 분석
+막 구조/비트시트
+STEP 3-6
+작가
+캐릭터 설정
+트리트먼트/씬 리스트
+STEP 7
+각본 생성
+4파트 분할 작성
+(1막~3막)
+STEP 8
+비평가
+시각적 리비전
+미디어
+DALL-E → ElevenLabs
+→ Runway → FFmpeg
+플랫폼: WPF .NET 9.0  |  외부 .md 프롬프트 파일로 프로젝트별 커스터마이징 가능
+AITennisCoaching — AI 스윙 분석 코칭
+7
+개념
+MediaPipe AI 포즈 추정으로 테니스 스윙을 실시간 분석하고
+,
+프로 선수와 비교하여 AI 코칭 리포트를 제공하는 시스템.
+플랫폼
+▸ FastAPI (Python 백엔드)
+▸ Vanilla JS (프론트엔드)
+▸ Android WebView (모바일)
+주요 특징
+▸ MediaPipe PoseLandmarker 기반 8단계 스윙 감지
+▸ 샷 유형 자동 분류 (포핸드/백핸드/서브/발리)
+▸ 프로 선수 레퍼런스 오버레이 비교
+▸ 슬로우모션 재생 (0.25x ~ 2x)
+▸ Before/After 비교 기능
+▸ AI 코칭 리포트 (Claude/OpenAI) + PNG 내보내기
+RuView — WiFi CSI 기반 비접촉 생체 감지
+8
+개념
+WiFi 신호의 CSI(Channel State Information)를 분석하여
+카메라 없이 벽 너머 인체를 감지하고 포즈를 추정.
+프라이버시를 보호하면서 생체 신호(호흡/심박) 모니터링 가능.
+54K fps 포즈 추정 속도
+5m 벽 관통 감지
+1,300+ 테스트 케이스
+주요 특징
+▸ 호흡 감지 (6-30 BPM)
+▸ 심박수 감지 (40-120 BPM)
+▸ 다중 인원 추적 (AP당 3-5명)
+▸ 멀티스태틱 메시 (4-6 센서 노드)
+▸ Rust 15 크레이트 고성능 구현
+▸ ESP32 펌웨어 연동
+AI 가상 피팅 — 이미지 & 영상 Virtual Try-On
+9
+CatVTON (이미지)
+▸ 경량 899M 파라미터
+▸ <8GB VRAM 추론
+▸ ICLR 2025 채택
+IDM-VTON (고품질)
+▸ IP-Adapter + SDXL
+▸ VITON-HD 데이터셋
+▸ 고해상도 피팅
+CatV2TON (영상)
+▸ DiT 아키텍처 기반
+▸ 이미지+영상 통합 모델
+▸ ViViD-S-Test 지원
+적용 분야
+이커머스 의류 가상 피팅 |  패션 리테일 매장 키오스크 |  온라인 쇼핑몰 체험 강화 |  디퓨전 모델 기반 최신 AI 기술
+Moonshine — 초경량 온디바이스 음성 인식
+10
+개념
+클라우드 없이 로컬에서 실시간 한국어/영어 음성 인식.
+Moonshine Tiny Korean 모델 (26M 파라미터)로
+Whisper 대비 10-100배 빠른 속도 달성.
+Moonshine 지연: 34ms 파라미터: 26M
+Whisper 지연: 277ms 파라미터: 
+244M+
+주요 특징
+▸ CER 6.46% 한국어 정확도
+▸ 실시간 FFT 스펙트럼 시각화 (64밴드)
+▸ 12개 다국어 모델 지원
+▸ WAV 파일 저장 기능
+▸ CafeNlu: 카페 키오스크 자연어 이해 (서브 프로젝트)
+▸ 플랫폼: WPF .NET 8.0 + NAudio
+하자보수검증 AI — 건설 하자 이미지 라벨링 & 검출
+11
+개념
+AI(Claude Vision)를 활용하여 건설 현장 하자 이미지를
+자동 분류 및 라벨링하고, YOLO 학습 데이터를 생성.
+시간당 800-2000장의 빠른 처리 속도.
+800-2000
+시간당 처리 이미지
+8종
+하자 카테고리
+DefectLabeler v1
+▸ 이진 분류 (정상/하자)
+▸ 카테고리 8종 (타일/벽지/도배/창호/설비/도장/바닥/기타)
+▸ 심각도 분류 지원
+▸ JSON/CSV 내보내기
+DefectLabeler v2 (NEW)
+▸ 바운딩박스 + 폴리곤 마킹
+▸ YOLO 학습 데이터 자동 생성
+▸ Claude Vision API 사전 라벨링
+▸ 키보드 단축키로 고속 작업
+스마트 키오스크 & POS 솔루션
+12
+EvanPOS
+레스토랑/카페 POS
+테이블관리, 매출분석, 재고관리
+쿠폰/포인트, 직원관리
+SSINO_POS
+리테일 POS + CMS
+POS 클라이언트 + 웹 관리자
+WPF .NET 9.0
+SSINO FACE KIOSK
+얼굴 인식 배송 키오스크
+얼굴 기반 비접촉 신원 확인
+무인 배송/수령 시스템
+PetKiosk
+반려동물 키오스크
+반려동물 관련 서비스
+WPF .NET 8.0
+Kiosk Agent
+워크플로우 자동화 엔진
+n8n 스타일 노드 기반 설계
+.kwf.json 워크플로우 파일
+FoodTruck
+푸드트럭 주문 앱
+Android Kotlin 앱
+고객 주문 인터페이스
+기타 AI 프로젝트
+13
+Autoresearch 자율 AI 에이전트가 LLM 학습 실험 자
+동 수행
+5분 단위 실험, 시간당 12회, 수면 중
+100회
+WorldMonitor 글로벌 이벤트 모니터링 시스템
+감마선, 항공, 기후, 사이버, 경제 데이터
+SmartPathFinder AI 경로 탐색 및 내비게이션
+맵 에디터 + 경로 알고리즘
+TelegramAiBot AI 기능 탑재 텔레그램 봇
+제어 서버 + 키오스크 에이전트
+LotteDongTanLED 롯데 동탄 LED 디스플레이 CMS
+HTTP + MQTT 기반 콘텐츠 관리
+RemoteDesktop 원격 데스크톱/키오스크 관리
+AdminViewer + KioskAgent
+LLMServer LLM 백엔드 서버
+.NET 8.0 기반 AI 추론 서비스
+BestDrive 운전 분석 프로젝트
+AI 기반 드라이빙 분석
+핵심 기술 스택
+14
+AI / LLM
+Claude API, OpenAI GPT/DALL-E
+ElevenLabs TTS, Runway AI Video
+컴퓨터 비전
+ONNX Runtime, MediaPipe, YOLO
+DensePose, SCRFD, ArcFace
+Stable Diffusion, DiT
+음성 처리
+Moonshine Voice (온디바이스)
+Whisper.Net, NAudio
+실시간 FFT 스펙트럼
+개발 언어
+C# (.NET 8.0/9.0) — 주력
+Python, Rust, TypeScript
+Kotlin (Android)
+UI 프레임워크
+WPF (데스크톱)
+FastAPI (웹 백엔드)
+Android (모바일)
+인프라 / 도구
+FFmpeg, MQTT, Docker
+DirectML GPU 가속
+JSON, SQLite, PostgreSQL
+유용성 및 실용적 가치
+15
+비용 절감
+AI 자동화로 전문 인력 비용 대폭 절
+감
+QuickClip: 1분 영상 $0.38
+생산성 향상
+하자 검증 시간당 800-2000장 처리
+각본/영상 자동 생성 파이프라인
+온디바이스 처리
+클라우드 의존 탈피 → 개인정보 보호
+네트워크 독립성 확보
+실시간 분석
+스포츠 코칭, 얼굴 인식, 포즈 추정
+모두 실시간 처리 가능
+크로스 플랫폼
+Windows 데스크톱 + Android + 
+Web
+다양한 환경 지원
+무인 자동화
+키오스크, POS, 워크플로우 엔진으로
+무인 운영 가능
+아이디어와 차별성
+16
+01 온디바이스 AI 우선
+SmartFaceEngine, Moonshine 등 클라우드 없이 로컬 처리
+→ 보안, 속도, 비용 모두에서 우위 확보
+02 멀티 AI 파이프라인
+여러 AI 모델을 순차 연결하여 복합 결과물 생성
+Claude → DALL-E → ElevenLabs → FFmpeg
+03 WiFi 비접촉 감지
+RuView: WiFi CSI 활용 벽 너머 감지
+카메라 없이 프라이버시를 보호하면서 생체 감지
+04 영상 기반 가상 피팅
+이미지뿐 아니라 영상까지 가능한 Virtual Try-On
+ICLR 2025 논문 채택 기술
+05 AI + 도메인 전문성
+건설 하자 검증, 테니스 코칭 등
+특정 산업에 AI를 깊이 있게 적용
+06 자율 연구 에이전트
+AI가 스스로 학습 실험을 설계하고 수행
+수면 중에도 100회 실험 자동 진행
+적용 분야
+17
+리테일 / 커머스
+POS, 키오스크, 가상 피팅, 푸드트럭
+미디어 / 콘텐츠
+AI 영상 생성, 각본 작성, 스토리보드
+스포츠 / 헬스
+테니스 스윙 분석, 생체 신호 모니터링
+건설 / 건축
+하자 검출 및 AI 라벨링
+보안 / 인증
+얼굴 인식, 라이브니스 감지, 비접촉 배송
+스마트 시설
+LED 디스플레이 관리, 원격 키오스크 제
+어
+패션
+이미지/영상 가상 피팅 (Virtual Try-On)
+IoT / 센싱
+WiFi 기반 관통 감지, ESP32 연동
+연구 / 자동화
+자율 AI 연구 에이전트, LLM 서버
+감사합니다
+AI 기술의 실질적 산업 적용을 위한 끊임없는 연구와 개발
+온디바이스 AI + 멀티모달 파이프라인 = 차세대 AI 솔루션
+문의 및 협업 환영

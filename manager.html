@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bit happen | Card Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Manrope:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="manager.css" />
+  </head>
+  <body>
+    <header class="manager-header">
+      <h1>Package Card Manager</h1>
+      <p>카드 내용을 편집하고 우선순위/가로 칸 점유(1~4)를 설정하세요.</p>
+      <div class="header-actions">
+        <a href="index.html">메인 페이지 보기</a>
+        <button type="button" id="reset-cards">기본값으로 초기화</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel form-panel">
+        <h2>카드 편집</h2>
+        <form id="card-form">
+          <input type="hidden" id="card-id" />
+
+          <label>사업영역
+            <select id="group" required>
+              <option value="kiosk">Kiosk</option>
+              <option value="ai">AI</option>
+              <option value="airport">Airport</option>
+              <option value="all">All/Enterprise</option>
+            </select>
+          </label>
+
+          <label>배지
+            <input id="badge" required />
+          </label>
+
+          <label>카드 제목
+            <input id="title" required />
+          </label>
+
+          <label>설명
+            <textarea id="copy" rows="3" required></textarea>
+          </label>
+
+          <label>핵심 기능 (줄바꿈으로 구분)
+            <textarea id="features" rows="4" required></textarea>
+          </label>
+
+          <label>적용 산업
+            <input id="industry" />
+          </label>
+
+          <label>구축 기간
+            <input id="period" />
+          </label>
+
+          <label>연동 범위
+            <input id="integration" />
+          </label>
+
+          <label>태그 (콤마 구분)
+            <input id="tags" placeholder="예: Vision, Security, API" />
+          </label>
+
+          <div class="inline-row">
+            <label>우선순위
+              <input id="priority" type="number" min="1" step="1" required />
+            </label>
+            <label>가로 칸 점유
+              <select id="span" required>
+                <option value="1">1칸</option>
+                <option value="2">2칸</option>
+                <option value="3">3칸</option>
+                <option value="4">4칸</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="inline-row">
+            <label>버튼 라벨
+              <input id="cta-label" value="상담 요청" />
+            </label>
+            <label>버튼 스타일
+              <select id="cta-style">
+                <option value="primary">Primary</option>
+                <option value="ghost">Ghost</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit">저장</button>
+            <button type="button" id="create-new">새 카드 작성</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="panel list-panel">
+        <h2>카드 목록</h2>
+        <p class="hint">우선순위가 낮을수록 메인 페이지에서 먼저 노출됩니다.</p>
+        <div id="card-list" class="card-list"></div>
+      </section>
+    </main>
+
+    <script src="cards-data.js"></script>
+    <script src="manager.js"></script>
+  </body>
+</html>

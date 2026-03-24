@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bit happen | Main Page</title>
+    <meta
+      name="description"
+      content="bit happen(비트해픈) 메인 페이지 - Adobe식 정보 구조를 참고한 솔루션 중심 홈페이지"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Manrope:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="top-banner">
+      <p>50+ 솔루션 통합 카탈로그 공개 | 공항, 키오스크, AI 도입 상담 오픈</p>
+      <a href="#contact">문의하기</a>
+    </div>
+
+    <header class="header">
+      <div class="header-inner container">
+        <a class="logo" href="#">
+          <span class="logo-mark">BH</span>
+          <span class="logo-text">
+            <strong>bit happen</strong>
+            <small>필연적인 소프트웨어</small>
+          </span>
+        </a>
+
+        <button class="menu-toggle" aria-label="모바일 메뉴" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+
+        <nav class="nav" aria-label="주요 탐색">
+          <ul>
+            <li class="has-mega" id="mega-host">
+              <button class="nav-button" id="mega-trigger" aria-expanded="false">Solutions</button>
+              <section class="mega-menu" aria-label="메가 메뉴">
+                <div class="mega-columns">
+                  <article>
+                    <h3>Kiosk</h3>
+                    <p>리테일/공공 현장을 위한 인터랙티브 플랫폼</p>
+                    <ul>
+                      <li>통합 길찾기</li>
+                      <li>민원 키오스크</li>
+                      <li>POS/CMS 운영</li>
+                    </ul>
+                  </article>
+                  <article>
+                    <h3>AI</h3>
+                    <p>멀티모달 기반 산업형 AI 제품군</p>
+                    <ul>
+                      <li>QuickClip</li>
+                      <li>SmartFaceEngine</li>
+                      <li>RuView</li>
+                    </ul>
+                  </article>
+                  <article>
+                    <h3>Airport</h3>
+                    <p>One ID, 보안 게이트, 수하물 운영 자동화</p>
+                    <ul>
+                      <li>스마트 체크인</li>
+                      <li>환승 보안 시스템</li>
+                      <li>Self Bag Drop 관제</li>
+                    </ul>
+                  </article>
+                  <article>
+                    <h3>Resources</h3>
+                    <p>문서, 사례, 기술 업데이트</p>
+                    <ul>
+                      <li>Documentation</li>
+                      <li>Case Studies</li>
+                      <li>Blog</li>
+                    </ul>
+                  </article>
+                </div>
+                <a class="mega-footer" href="#catalog">모든 솔루션 보기</a>
+              </section>
+            </li>
+            <li><a href="#plans">Packages</a></li>
+            <li><a href="#catalog">Catalog</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="manager.html">Card Manager</a></li>
+            <li><a class="cta-mini" href="#contact">Contact</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero container reveal">
+        <div class="hero-copy">
+          <p class="label">NO FATE BUT WHAT WE MAKE</p>
+          <h1>필요한 솔루션을 빠르게 선택하고, 바로 도입하세요.</h1>
+          <p>
+            비트해픈 메인 페이지는 Adobe식 탐색 경험을 참고해 설계되었습니다.
+            많은 제품을 잃지 않고 찾을 수 있도록 카테고리, 패키지, 검색 흐름을 단순화했습니다.
+            각 패키지 카드에는 적용 산업, 구축 범위, 연동 시스템 정보를 함께 제공해 의사결정을 빠르게 돕습니다.
+          </p>
+          <div class="hero-actions">
+            <a class="btn primary" href="#plans">패키지 보기</a>
+            <a class="btn ghost" href="#catalog">전체 카탈로그</a>
+          </div>
+        </div>
+        <div class="hero-panel">
+          <h2>Business Units</h2>
+          <ul>
+            <li><strong>Kiosk</strong><span>리테일/공공 인프라 운영 플랫폼</span></li>
+            <li><strong>AI</strong><span>생성형, 비전, 음성, 예측 엔진</span></li>
+            <li><strong>Airport</strong><span>스마트 여정/보안/수하물 자동화</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="container reveal" id="plans">
+        <div class="section-head">
+          <h2>대표 도입 패키지</h2>
+          <p>플랜 페이지 UX를 참고해 비교가 쉬운 카드 중심 구조로 구성했습니다.</p>
+        </div>
+
+        <div class="segment-control" role="tablist" aria-label="사업영역 필터">
+          <button class="segment active" data-group="all" aria-selected="true">전체</button>
+          <button class="segment" data-group="kiosk" aria-selected="false">Kiosk</button>
+          <button class="segment" data-group="ai" aria-selected="false">AI</button>
+          <button class="segment" data-group="airport" aria-selected="false">Airport</button>
+        </div>
+
+        <div class="plan-grid" id="plan-grid"></div>
+      </section>
+
+      <section class="container reveal" id="catalog">
+        <div class="section-head between">
+          <div>
+            <h2>솔루션 카탈로그</h2>
+            <p>제품이 많아도 빠르게 찾을 수 있도록 문제, 산업, 기술 축으로 분류합니다.</p>
+          </div>
+          <a href="#contact" class="text-link">전체 리스트 요청</a>
+        </div>
+
+        <div class="catalog-grid">
+          <article>
+            <h3>문제 기반</h3>
+            <p>대기시간 단축, 무인 운영, 인증 강화, 품질 검증 자동화, 고객 경험 개선</p>
+          </article>
+          <article>
+            <h3>산업 기반</h3>
+            <p>공항, 유통, 외식, 공공기관, 의료, 건설, 교통 인프라</p>
+          </article>
+          <article>
+            <h3>기술 기반</h3>
+            <p>Vision, Speech, LLM, Workflow, Edge AI, 시스템 통합 API</p>
+          </article>
+          <article>
+            <h3>추천 리소스</h3>
+            <p>도입 사례집, API 문서, 운영 체크리스트, 인프라 가이드</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="container reveal" id="process">
+        <div class="section-head">
+          <h2>도입 프로세스</h2>
+          <p>기획부터 안정화까지 단계별로 명확한 산출물을 제공합니다.</p>
+        </div>
+        <div class="process-grid">
+          <article>
+            <p class="process-step">Step 01</p>
+            <h3>요구사항 진단</h3>
+            <p>운영 환경, 기존 시스템, 목표 KPI를 기준으로 우선 과제를 도출합니다.</p>
+          </article>
+          <article>
+            <p class="process-step">Step 02</p>
+            <h3>파일럿 구축</h3>
+            <p>핵심 기능을 빠르게 검증할 수 있는 파일럿을 구성하고 성능을 측정합니다.</p>
+          </article>
+          <article>
+            <p class="process-step">Step 03</p>
+            <h3>확장 배포</h3>
+            <p>검증 결과를 기준으로 다지점/대규모 환경으로 단계적 확장을 진행합니다.</p>
+          </article>
+          <article>
+            <p class="process-step">Step 04</p>
+            <h3>운영 최적화</h3>
+            <p>모니터링 지표, 장애 대응, 업데이트 운영 정책을 포함한 안정화 체계를 제공합니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="container reveal" id="metrics">
+        <div class="section-head between">
+          <div>
+            <h2>기대 효과 지표</h2>
+            <p>패키지 도입 시 현장에서 자주 확인하는 핵심 지표입니다.</p>
+          </div>
+          <a href="#contact" class="text-link">맞춤 KPI 설계 요청</a>
+        </div>
+        <div class="metric-grid">
+          <article>
+            <h3>운영 효율</h3>
+            <p class="metric-value">+32%</p>
+            <p>업무 자동화와 동선 최적화로 처리량을 개선합니다.</p>
+          </article>
+          <article>
+            <h3>대기 시간</h3>
+            <p class="metric-value">-27%</p>
+            <p>무인 절차와 안내 고도화로 고객 대기 시간을 단축합니다.</p>
+          </article>
+          <article>
+            <h3>운영 안정성</h3>
+            <p class="metric-value">99.9%</p>
+            <p>관제 체계와 표준 운영 정책으로 시스템 가용성을 유지합니다.</p>
+          </article>
+          <article>
+            <h3>의사결정 속도</h3>
+            <p class="metric-value">+45%</p>
+            <p>실시간 리포트와 통합 대시보드로 대응 시간을 단축합니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="container reveal" id="faq">
+        <div class="section-head">
+          <h2>자주 묻는 질문</h2>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>50개 이상의 제품을 어떻게 관리하나요?</summary>
+            <p>공통 메타데이터(문제/산업/기술)를 기준으로 제품을 태깅하여 탐색 구조를 일관되게 유지합니다.</p>
+          </details>
+          <details>
+            <summary>기존 시스템과 연동 가능한가요?</summary>
+            <p>API 중심 아키텍처를 기본으로, 현장 장비 및 백오피스 시스템과 단계적으로 연동합니다.</p>
+          </details>
+          <details>
+            <summary>도입 기간은 어느 정도인가요?</summary>
+            <p>패키지별로 다르지만, 파일럿은 보통 4~8주, 확장은 현장 범위에 맞춰 커스터마이즈합니다.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="contact container reveal" id="contact">
+        <div>
+          <p class="label">CONTACT</p>
+          <h2>bit happen과 함께 다음 필연을 설계하세요</h2>
+          <p>hello@bithappen.com 으로 연락 주시면 사업 영역별 컨설턴트가 연결됩니다.</p>
+        </div>
+        <a class="btn primary" href="mailto:hello@bithappen.com">메일 보내기</a>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>© 2026 bit happen. All rights reserved.</p>
+    </footer>
+
+    <script src="cards-data.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
