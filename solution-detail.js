@@ -30,7 +30,7 @@ function normalizeMediaItems(items) {
     .filter(Boolean);
 }
 
-function getLibraryMediaItemsByCardId(cardId) {
+function getLocalDraftMediaItemsByCardId(cardId) {
   if (!cardId) return [];
 
   try {
@@ -52,6 +52,25 @@ function getLibraryMediaItemsByCardId(cardId) {
   } catch (_error) {
     return [];
   }
+}
+
+function getSourceLibraryMediaItemsByCardId(cardId) {
+  if (!cardId) return [];
+
+  const sourceItems = window.BitHappenMediaLibrary?.items;
+  if (!Array.isArray(sourceItems)) return [];
+
+  return normalizeMediaItems(
+    sourceItems
+      .filter((item) => item && item.cardId === cardId)
+      .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+      .map((item) => ({
+        type: item.type,
+        src: item.src,
+        title: item.title,
+        poster: item.poster,
+      }))
+  );
 }
 
 function renderMediaSection(mediaItems) {
@@ -299,8 +318,15 @@ function render() {
   const integrationItems = override?.integration || groupText.integration;
   const overrideMedia = normalizeMediaItems(override?.media || []);
   const cardMedia = normalizeMediaItems(card.media || []);
-  const libraryMedia = getLibraryMediaItemsByCardId(card.id);
-  const mediaItems = libraryMedia.length ? libraryMedia : overrideMedia.length ? overrideMedia : cardMedia;
+  const sourceLibraryMedia = getSourceLibraryMediaItemsByCardId(card.id);
+  const localDraftMedia = getLocalDraftMediaItemsByCardId(card.id);
+  const mediaItems = sourceLibraryMedia.length
+    ? sourceLibraryMedia
+    : localDraftMedia.length
+    ? localDraftMedia
+    : overrideMedia.length
+    ? overrideMedia
+    : cardMedia;
 
   const features = featureItems.map((item) => `<li>${esc(item)}</li>`).join('');
   const pains = painItems.map((item) => `<li>${esc(item)}</li>`).join('');
