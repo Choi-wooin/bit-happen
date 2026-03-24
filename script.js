@@ -21,7 +21,9 @@ function renderPlanCards(group = 'all') {
   }
 
   const cards = window.BitHappenCardStore.getCards();
-  const visibleCards = cards.filter((card) => group === 'all' || card.group === group || card.group === 'all');
+  const visibleCards = cards.filter(
+    (card) => card.enabled !== false && (group === 'all' || card.group === group || card.group === 'all')
+  );
 
   planGrid.innerHTML = '';
 
@@ -33,6 +35,7 @@ function renderPlanCards(group = 'all') {
     if (card.span >= 2) {
       article.classList.add('wide');
     }
+    article.classList.add('plan-card-clickable');
     article.dataset.group = card.group;
 
     const features = (Array.isArray(card.features) ? card.features : [])
@@ -45,8 +48,7 @@ function renderPlanCards(group = 'all') {
 
     const ctaStyle = card.ctaStyle === 'ghost' ? 'ghost' : 'primary';
     const ctaLabel = '상세보기';
-    // TODO: 상세 페이지가 준비되면 각 카드별 URL로 교체
-    const detailHref = '#';
+    const detailHref = `solution-detail.html?id=${encodeURIComponent(card.id)}`;
 
     article.innerHTML = `
       <p class="plan-badge">${escapeHtml(card.badge || 'Package')}</p>
@@ -61,6 +63,32 @@ function renderPlanCards(group = 'all') {
       </div>
       <a href="${detailHref}" class="btn ${ctaStyle} plan-cta">${escapeHtml(ctaLabel)}</a>
     `;
+
+    // 키오스크 UX처럼 카드 본문 어디를 눌러도 상세보기로 이동합니다.
+    article.setAttribute('role', 'link');
+    article.setAttribute('tabindex', '0');
+
+    const openDetail = () => {
+      window.location.href = detailHref;
+    };
+
+    article.addEventListener('click', (event) => {
+      if (event.target.closest('a, button, input, select, textarea, label, summary, details')) {
+        return;
+      }
+      openDetail();
+    });
+
+    article.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') {
+        return;
+      }
+      if (event.target.closest('a, button, input, select, textarea, label, summary, details')) {
+        return;
+      }
+      event.preventDefault();
+      openDetail();
+    });
 
     planGrid.appendChild(article);
   });

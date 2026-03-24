@@ -18,6 +18,7 @@ const fields = {
   span: document.getElementById('span'),
   ctaLabel: document.getElementById('cta-label'),
   ctaStyle: document.getElementById('cta-style'),
+  enabled: document.getElementById('enabled'),
 };
 
 function getCards() {
@@ -43,6 +44,7 @@ function clearForm() {
   fields.span.value = '1';
   fields.ctaLabel.value = '상세보기';
   fields.ctaStyle.value = 'primary';
+  fields.enabled.checked = true;
 }
 
 function parseLines(value) {
@@ -74,6 +76,16 @@ function fillForm(card) {
   fields.span.value = String(card.span || 1);
   fields.ctaLabel.value = card.ctaLabel || '상세보기';
   fields.ctaStyle.value = card.ctaStyle || 'primary';
+  fields.enabled.checked = card.enabled !== false;
+}
+
+function toggleEnabled(id) {
+  const cards = getCards().map((card) => {
+    if (card.id !== id) return card;
+    return { ...card, enabled: card.enabled === false };
+  });
+  saveCards(cards);
+  renderList();
 }
 
 function updateCardSpan(id, span) {
@@ -116,11 +128,12 @@ function renderList() {
         <h3>${card.title}</h3>
         <strong>P${card.priority}</strong>
       </div>
-      <p class="item-meta">${card.group.toUpperCase()} | ${card.badge} | ${card.span}칸</p>
+      <p class="item-meta">${card.group.toUpperCase()} | ${card.badge} | ${card.span}칸 | ${card.enabled === false ? '비노출' : '노출'}</p>
       <div class="item-actions">
         <button type="button" data-action="edit">편집</button>
         <button type="button" data-action="up">우선순위 +</button>
         <button type="button" data-action="down">우선순위 -</button>
+        <button type="button" data-action="toggle">노출 전환</button>
         <button type="button" data-action="span2">2칸</button>
         <button type="button" data-action="span3">3칸</button>
         <button type="button" data-action="span4">4칸</button>
@@ -132,6 +145,7 @@ function renderList() {
     item.querySelector('[data-action="edit"]').addEventListener('click', () => fillForm(card));
     item.querySelector('[data-action="up"]').addEventListener('click', () => movePriority(card.id, -1));
     item.querySelector('[data-action="down"]').addEventListener('click', () => movePriority(card.id, 1));
+    item.querySelector('[data-action="toggle"]').addEventListener('click', () => toggleEnabled(card.id));
     item.querySelector('[data-action="span1"]').addEventListener('click', () => updateCardSpan(card.id, 1));
     item.querySelector('[data-action="span2"]').addEventListener('click', () => updateCardSpan(card.id, 2));
     item.querySelector('[data-action="span3"]').addEventListener('click', () => updateCardSpan(card.id, 3));
@@ -163,6 +177,7 @@ form.addEventListener('submit', (event) => {
     span: Number(fields.span.value),
     ctaLabel: fields.ctaLabel.value.trim() || '상세보기',
     ctaStyle: fields.ctaStyle.value,
+    enabled: fields.enabled.checked,
   };
 
   let next;

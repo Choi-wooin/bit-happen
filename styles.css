@@ -212,7 +212,56 @@ main {
   padding: clamp(20px, 4vw, 44px);
   display: grid;
   gap: 20px;
-  grid-template-columns: 1.35fr 0.85fr;
+  grid-template-columns: 1.2fr 0.8fr 0.85fr;
+  align-items: start;
+}
+
+.hero-note {
+  position: relative;
+  background: linear-gradient(140deg, #ffe988, #ffe06b);
+  border: 1px solid #d3bc59;
+  padding: 10px 14px 8px;
+  transform: rotate(-2.4deg);
+  box-shadow: 0 14px 24px rgba(120, 92, 15, 0.22);
+  min-height: 106px;
+  align-self: start;
+}
+
+.note-head {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #6a5610;
+  font-family: "Manrope", sans-serif;
+}
+
+.note-brand {
+  margin: 8px 0 6px;
+  font-size: 1.42rem;
+  font-weight: 400;
+  font-family: "Patrick Hand SC", "Noto Sans KR", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #2a2926;
+}
+
+.note-copy {
+  margin: 0;
+  color: #35300f;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.note-pin {
+  position: absolute;
+  right: 14px;
+  top: -9px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #f14a3c;
+  box-shadow: 0 0 0 4px rgba(241, 74, 60, 0.22);
 }
 
 .label {
@@ -380,6 +429,7 @@ h2 {
   gap: 10px;
   box-shadow: var(--shadow-sm);
   min-height: 485px;
+  position: relative;
 }
 
 .plan-card.wide {
@@ -461,11 +511,26 @@ h2 {
 }
 
 .plan-card .plan-cta {
-  margin-left: auto;
-  border-radius: 999px;
+  margin: 0;
+  border-radius: 0;
   width: auto;
-  min-width: 104px;
-  padding: 9px 16px;
+  min-width: 0;
+  padding: 2px 5px;
+  font-size: 0.74rem;
+  font-weight: 400;
+  line-height: 1.1;
+  position: absolute;
+  top: 18px;
+  right: 10px;
+}
+
+.plan-card-clickable {
+  cursor: pointer;
+}
+
+.plan-card-clickable:focus-visible {
+  outline: 2px solid #8cbcff;
+  outline-offset: 2px;
 }
 
 .catalog-grid {
@@ -609,6 +674,10 @@ h2 {
 
   .hero {
     grid-template-columns: 1fr;
+  }
+
+  .hero-note {
+    max-width: 420px;
   }
 
   .plan-card {

@@ -339,6 +339,27 @@
       tags: ['Agent', 'Research', 'Knowledge'],
     },
     {
+      id: 'ai-udt-tennis',
+      group: 'ai',
+      badge: 'AI',
+      title: 'UDT(우리동네 테니스)',
+      copy: '스마트폰 스윙 영상 업로드만으로 33개 관절 분석과 자연어 코칭을 제공하는 웹 기반 테니스 코칭 플랫폼입니다.',
+      features: [
+        'MediaPipe PoseLandmarker 기반 33개 관절 분석',
+        'EfficientDet-Lite0 라켓 감지 결합 파이프라인',
+        '9개 핵심 메트릭 시그모이드 0-100점 스코어링',
+        'LLM 기반 자연어 교정 코칭',
+      ],
+      ctaLabel: '상담 요청',
+      ctaStyle: 'primary',
+      priority: 159,
+      span: 2,
+      industry: '스포츠 테크, 코칭 플랫폼',
+      period: '4-8주 구축',
+      integration: 'FastAPI, WebSocket, MariaDB, CMS',
+      tags: ['Tennis AI', 'Pose Analysis', 'LLM Coaching'],
+    },
+    {
       id: 'ai-tennis-coaching',
       group: 'ai',
       badge: 'AI',
@@ -619,6 +640,7 @@
   function normalizeCard(card) {
     return {
       id: String(card.id || `card-${Date.now()}`),
+      enabled: card.enabled !== false,
       group: card.group || 'all',
       badge: card.badge || 'Package',
       title: card.title || '제목 없음',
