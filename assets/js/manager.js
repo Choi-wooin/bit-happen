@@ -43,6 +43,10 @@ async function persistCards(cards) {
   renderList();
 }
 
+if (__session.role !== 'super_admin') {
+  resetButton.style.display = 'none';
+}
+
 function buildDefaultCardsSource(cards) {
   return `const defaultCards = ${JSON.stringify(cards, null, 2)};`;
 }
@@ -225,6 +229,17 @@ form.addEventListener('submit', async (event) => {
 createNewButton.addEventListener('click', () => clearForm());
 
 resetButton.addEventListener('click', async () => {
+  if (__session.role !== 'super_admin') {
+    alert('super admin만 기본값 초기화를 실행할 수 있습니다.');
+    return;
+  }
+
+  const first = confirm('경고: 모든 값이 초기화 됩니다. 함부로 누르지 마세요.\n\n정말 계속하시겠습니까?');
+  if (!first) return;
+
+  const second = confirm('최종 확인: 현재 카드 설정(우선순위/크기/노출 포함)이 모두 기본값으로 되돌아갑니다.\n\n초기화를 실행할까요?');
+  if (!second) return;
+
   const result = await window.BitHappenCardStore.resetCards();
   if (result && result.remote === false) {
     alert('원격(Supabase) 동기화에 실패했습니다. 로컬 기본값만 적용되었습니다.');
