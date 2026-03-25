@@ -5,7 +5,7 @@ if (!__session) {
 
 const STORAGE_KEY = 'bitHappenMediaLibrary_v1';
 const LIBRARY_FILE_NAME = 'media-library.js';
-const MEDIA_BASE_PATH = '../assets/media/';
+const MEDIA_BASE_PATH = 'assets/media/';
 const DEFAULT_MEDIA_STATE_KEY = 'mediaLibrary';
 
 const form = document.getElementById('upload-form');
@@ -44,9 +44,27 @@ function resolveMediaPath(src) {
 
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
   if (value.startsWith('/')) return value;
+  if (value.startsWith('../assets/')) return value;
   if (value.startsWith('../') || value.startsWith('./')) return value;
   if (value.startsWith('assets/')) return `../${value}`;
   return value;
+}
+
+function normalizeStoredAssetPath(src) {
+  const value = String(src || '').trim();
+  if (!value) return '';
+  if (value.startsWith('../assets/')) return value.slice(3);
+  if (value.startsWith('./assets/')) return value.slice(2);
+  return value;
+}
+
+function normalizeLibraryItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => ({
+    ...item,
+    src: normalizeStoredAssetPath(item?.src),
+    poster: normalizeStoredAssetPath(item?.poster),
+  }));
 }
 
 function getCards() {
@@ -63,25 +81,26 @@ function loadLocalOrSourceLibrary() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? normalizeLibraryItems(parsed) : [];
     }
 
     const sourceItems = window.BitHappenMediaLibrary?.items;
     if (Array.isArray(sourceItems)) {
-      return sourceItems.map((item) => ({ ...item }));
+      return normalizeLibraryItems(sourceItems.map((item) => ({ ...item })));
     }
 
     return [];
   } catch (_error) {
     const sourceItems = window.BitHappenMediaLibrary?.items;
-    return Array.isArray(sourceItems) ? sourceItems.map((item) => ({ ...item })) : [];
+    return Array.isArray(sourceItems) ? normalizeLibraryItems(sourceItems.map((item) => ({ ...item }))) : [];
   }
 }
 
 function saveLibrary(items) {
-  libraryCache = Array.isArray(items) ? items.map((item) => ({ ...item })) : [];
+  const normalizedItems = normalizeLibraryItems(items);
+  libraryCache = Array.isArray(normalizedItems) ? normalizedItems.map((item) => ({ ...item })) : [];
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedItems));
   } catch (error) {
     if (error && error.name === 'QuotaExceededError') {
       throw new Error('브라우저 저장 공간이 부족합니다. 동영상은 assets 폴더 경로(URL) 방식으로 등록해 주세요.');
@@ -119,7 +138,7 @@ async function fetchLibraryFromSupabase() {
   if (!Array.isArray(rows) || rows.length === 0) return null;
 
   const value = rows[0]?.value;
-  return Array.isArray(value) ? value : null;
+  return Array.isArray(value) ? normalizeLibraryItems(value) : null;
 }
 
 async function saveLibraryToSupabase(items) {
@@ -130,7 +149,7 @@ async function saveLibraryToSupabase(items) {
   const payload = [
     {
       key: cfg.mediaStateKey,
-      value: items,
+      value: normalizeLibraryItems(items),
     },
   ];
 
@@ -155,7 +174,7 @@ async function saveLibraryToSupabase(items) {
 async function persistLibrary(items) {
   saveLibrary(items);
   try {
-    const result = await saveLibraryToSupabase(items);
+    const result = await saveLibraryToSupabase(normalizeLibraryItems(items));
     return result;
   } catch (_error) {
     return { remote: false, reason: 'save-failed' };

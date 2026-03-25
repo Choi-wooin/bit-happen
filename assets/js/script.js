@@ -22,6 +22,8 @@ function resolveMediaPath(src) {
   if (!value) return '';
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
   if (value.startsWith('/')) return value;
+  if (value.startsWith('../assets/')) return value.slice(3);
+  if (value.startsWith('./assets/')) return value.slice(2);
   if (value.startsWith('./') || value.startsWith('../')) return value;
   if (value.startsWith('assets/')) return value;
   return value;
