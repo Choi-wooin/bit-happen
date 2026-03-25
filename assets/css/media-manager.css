@@ -55,14 +55,16 @@ body {
   margin: 0 auto;
   padding: 12px 24px 28px;
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 360px minmax(0, 1fr);
   gap: 16px;
+  align-items: start;
 }
 
 .panel {
   border: 1px solid var(--line);
   background: var(--surface);
   padding: 16px;
+  min-width: 0;
 }
 
 .panel h2 {
@@ -73,6 +75,7 @@ body {
 form {
   display: grid;
   gap: 10px;
+  min-width: 0;
 }
 
 label {
@@ -80,6 +83,7 @@ label {
   gap: 6px;
   font-size: 0.92rem;
   font-weight: 700;
+  min-width: 0;
 }
 
 .inline-check {
@@ -106,6 +110,8 @@ select {
   border: 1px solid var(--line);
   padding: 9px 10px;
   background: #fff;
+  width: 100%;
+  min-width: 0;
 }
 
 .hint {
@@ -116,6 +122,7 @@ select {
 
 .form-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -126,6 +133,7 @@ select {
   padding: 10px 14px;
   font-weight: 700;
   cursor: pointer;
+  min-width: 0;
 }
 
 .form-actions button:last-child {
@@ -140,6 +148,7 @@ select {
   padding: 10px;
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .url-section h3 {
@@ -150,9 +159,10 @@ select {
 
 .url-input-with-prefix {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   border: 1px solid var(--line);
   background: #fff;
+  min-width: 0;
 }
 
 .url-input-with-prefix .url-prefix {
@@ -161,10 +171,13 @@ select {
   background: #f6f9fc;
   border-right: 1px solid var(--line);
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .url-input-with-prefix input {
   border: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .url-section button {
@@ -179,10 +192,12 @@ select {
 .url-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .url-actions button {
-  flex: 1;
+  flex: 1 1 140px;
+  min-width: 0;
 }
 
 .url-preview {
@@ -190,6 +205,7 @@ select {
   background: #fff;
   min-height: 88px;
   padding: 8px;
+  min-width: 0;
 }
 
 .url-preview .media-item {
@@ -222,6 +238,7 @@ select {
   padding: 8px;
   display: grid;
   gap: 6px;
+  max-width: 100%;
 }
 
 .selected-preview-item .meta p {
@@ -235,10 +252,16 @@ select {
   align-items: center;
 }
 
+.list-head h2 {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
 .head-actions {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .head-actions button {
@@ -262,6 +285,7 @@ select {
   padding: 8px;
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .media-frame {
@@ -301,12 +325,16 @@ select {
 .meta {
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 
 .meta p {
   margin: 0;
   font-size: 0.82rem;
   color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rep-badge {
@@ -314,15 +342,22 @@ select {
   font-size: 0.75rem;
   color: #0a7f68;
   font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .meta strong {
   font-size: 0.88rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .item-actions {
   display: flex;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .item-actions button {
