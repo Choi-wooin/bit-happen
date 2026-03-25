@@ -11,6 +11,7 @@ const DEFAULT_MEDIA_STATE_KEY = 'mediaLibrary';
 const form = document.getElementById('upload-form');
 const cardSelect = document.getElementById('card-id');
 const fileInput = document.getElementById('files');
+const representativeInput = document.getElementById('representative-thumb');
 const titleInput = document.getElementById('title');
 const urlTypeSelect = document.getElementById('url-type');
 const mediaUrlInput = document.getElementById('media-url');
@@ -379,6 +380,16 @@ function currentCardTitle(cardId) {
   return card ? card.title : cardId;
 }
 
+function normalizeRepresentativeByCard(items, cardId, representativeId) {
+  return items.map((item) => {
+    if (!item || item.cardId !== cardId) return item;
+    return {
+      ...item,
+      isRepresentative: item.id === representativeId,
+    };
+  });
+}
+
 function renderLibrary() {
   const library = loadLibrary();
   const filterId = filterSelect.value || 'all';
@@ -399,6 +410,7 @@ function renderLibrary() {
           ? `<video src="${esc(resolveMediaPath(item.src))}" ${item.poster ? `poster="${esc(resolveMediaPath(item.poster))}"` : ''} preload="metadata" muted playsinline></video>`
           : `<img src="${esc(resolveMediaPath(item.src))}" alt="${esc(title)}" loading="lazy" />`;
       const sourceLabel = item.sourceMode === 'url' ? 'URL 등록' : '파일 업로드';
+      const representativeLabel = item.isRepresentative ? '<p class="rep-badge">대표 썸네일</p>' : '';
       return `
         <article class="media-item" data-id="${item.id}">
           <div class="media-frame" style="--ratio:${ratio}">
@@ -407,12 +419,14 @@ function renderLibrary() {
           </div>
           <div class="meta">
             <strong>${esc(title)}</strong>
+            ${representativeLabel}
             <p>파일명: ${esc(getDisplayFileName(item))}</p>
             <p>카드: ${esc(currentCardTitle(item.cardId))}</p>
             <p>저장 방식: ${esc(sourceLabel)}</p>
             <p>${item.width || '-'} x ${item.height || '-'} / ${new Date(item.createdAt).toLocaleString('ko-KR')}</p>
           </div>
           <div class="item-actions">
+            <button type="button" data-action="set-representative" ${item.type !== 'image' ? 'disabled' : ''}>대표 지정</button>
             <button type="button" data-action="delete">삭제</button>
           </div>
         </article>
@@ -432,6 +446,31 @@ function renderLibrary() {
       if (result.remote === false) {
         alert('원격(Supabase) 동기화에 실패했습니다. 연결 상태를 확인해 주세요.');
       }
+    });
+  });
+
+  Array.from(libraryRoot.querySelectorAll('[data-action="set-representative"]')).forEach((button) => {
+    button.addEventListener('click', async () => {
+      const card = button.closest('.media-item');
+      const id = card?.getAttribute('data-id');
+      if (!id) return;
+
+      const listAll = loadLibrary();
+      const target = listAll.find((item) => item.id === id);
+      if (!target) return;
+      if (target.type !== 'image') {
+        alert('대표 썸네일은 이미지만 지정할 수 있습니다.');
+        return;
+      }
+
+      const next = normalizeRepresentativeByCard(listAll, target.cardId, target.id);
+      const result = await persistLibrary(next);
+      renderLibrary();
+      if (result.remote === false) {
+        alert('대표 썸네일은 로컬에 저장되었지만 Supabase 동기화에 실패했습니다.');
+        return;
+      }
+      alert('대표 썸네일로 지정했습니다.');
     });
   });
 }
@@ -509,8 +548,10 @@ form.addEventListener('submit', async (event) => {
 
   const cardId = cardSelect.value;
   const title = titleInput.value.trim();
+  const wantsRepresentative = representativeInput?.checked === true;
   const current = loadLibrary();
   let uploadedCount = 0;
+  let representativeAssigned = false;
 
   try {
     for (const file of files) {
@@ -525,8 +566,15 @@ form.addEventListener('submit', async (event) => {
 
       const src = await toDataUrl(file);
       const size = await getMediaInfo(mediaType, src);
+      const id = `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const isRepresentative =
+        wantsRepresentative && mediaType === 'image' && representativeAssigned === false;
+      if (isRepresentative) {
+        representativeAssigned = true;
+      }
+
       current.push({
-        id: `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id,
         cardId,
         type: mediaType,
         title: title || file.name,
@@ -536,9 +584,21 @@ form.addEventListener('submit', async (event) => {
         sourceMode: 'dataurl',
         width: size.width,
         height: size.height,
+        isRepresentative,
         createdAt: Date.now(),
       });
       uploadedCount += 1;
+    }
+
+    let nextItems = current;
+    if (representativeAssigned) {
+      const representativeItem = current
+        .slice()
+        .reverse()
+        .find((item) => item.cardId === cardId && item.isRepresentative === true);
+      if (representativeItem) {
+        nextItems = normalizeRepresentativeByCard(current, cardId, representativeItem.id);
+      }
     }
 
     if (uploadedCount === 0) {
@@ -546,7 +606,7 @@ form.addEventListener('submit', async (event) => {
       return;
     }
 
-    const result = await persistLibrary(current);
+    const result = await persistLibrary(nextItems);
     form.reset();
     clearSelectedPreview();
     makeCardOptions();
@@ -572,6 +632,7 @@ addMediaUrlButton.addEventListener('click', async () => {
   const selectedType = String(urlTypeSelect.value || 'auto');
   const poster = String(posterUrlInput.value || '').trim();
   const title = String(titleInput.value || '').trim();
+  const wantsRepresentative = representativeInput?.checked === true;
 
   if (!cardId) {
     alert('카드를 먼저 선택해 주세요.');
@@ -600,8 +661,10 @@ addMediaUrlButton.addEventListener('click', async () => {
   try {
     const size = mediaType === 'video' ? await getVideoSize(url) : await getImageSize(url);
     const current = loadLibrary();
+    const id = `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const isRepresentative = wantsRepresentative && mediaType === 'image';
     current.push({
-      id: `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      id,
       cardId,
       type: mediaType,
       title: title || fileName || mediaType,
@@ -611,9 +674,12 @@ addMediaUrlButton.addEventListener('click', async () => {
       sourceMode: 'url',
       width: size.width,
       height: size.height,
+      isRepresentative,
       createdAt: Date.now(),
     });
-    const result = await persistLibrary(current);
+
+    const next = isRepresentative ? normalizeRepresentativeByCard(current, cardId, id) : current;
+    const result = await persistLibrary(next);
     mediaUrlInput.value = '';
     posterUrlInput.value = '';
     urlPreviewRoot.innerHTML = '<p class="empty">미리보기할 URL을 입력해 주세요.</p>';

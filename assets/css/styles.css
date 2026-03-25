@@ -432,6 +432,44 @@ h2 {
   position: relative;
 }
 
+.plan-layout {
+  display: block;
+}
+
+.plan-content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.plan-lead-thumb {
+  display: none;
+}
+
+.plan-card.has-lead-thumb .plan-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.95fr) minmax(0, 1.05fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.plan-card.has-lead-thumb .plan-lead-thumb {
+  display: block;
+  border: 1px solid var(--line);
+  background: #0f1b2a;
+  overflow: hidden;
+  min-height: 240px;
+}
+
+.plan-card.has-lead-thumb .plan-lead-thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
 .plan-card.wide {
   min-height: 420px;
 }
@@ -706,6 +744,14 @@ h2 {
 
   .plan-card {
     grid-column: span 1 !important;
+  }
+
+  .plan-card.has-lead-thumb .plan-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-card.has-lead-thumb .plan-lead-thumb {
+    min-height: 220px;
   }
 }
 

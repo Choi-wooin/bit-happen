@@ -82,6 +82,19 @@ label {
   font-weight: 700;
 }
 
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.inline-check input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+}
+
 input,
 select,
 button {
@@ -296,6 +309,13 @@ select {
   color: var(--muted);
 }
 
+.rep-badge {
+  margin: 2px 0 0;
+  font-size: 0.75rem;
+  color: #0a7f68;
+  font-weight: 800;
+}
+
 .meta strong {
   font-size: 0.88rem;
 }
@@ -311,6 +331,11 @@ select {
   padding: 5px 8px;
   font-size: 0.8rem;
   cursor: pointer;
+}
+
+.item-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .empty {
