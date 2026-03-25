@@ -667,6 +667,77 @@
 
   const SORTED_DEFAULTS = sortCards(defaultCards);
   const DEFAULTS_SIGNATURE = JSON.stringify(SORTED_DEFAULTS);
+  let cardsCache = clone(SORTED_DEFAULTS);
+
+  function emitCardsUpdated() {
+    window.dispatchEvent(new CustomEvent('bitHappenCardsUpdated'));
+  }
+
+  function getSupabaseConfig() {
+    const cfg = window.BitHappenSupabaseConfig || {};
+    const url = String(cfg.url || '').trim().replace(/\/$/, '');
+    const anonKey = String(cfg.anonKey || '').trim();
+    const cardsStateKey = String(cfg.cardsStateKey || 'cards').trim() || 'cards';
+    const enabled = Boolean(url && anonKey);
+    return { enabled, url, anonKey, cardsStateKey };
+  }
+
+  async function fetchCardsFromSupabase() {
+    const cfg = getSupabaseConfig();
+    if (!cfg.enabled) return null;
+
+    const endpoint = `${cfg.url}/rest/v1/site_state?key=eq.${encodeURIComponent(cfg.cardsStateKey)}&select=value&limit=1`;
+    const response = await fetch(endpoint, {
+      headers: {
+        apikey: cfg.anonKey,
+        Authorization: `Bearer ${cfg.anonKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase fetch failed: ${response.status}`);
+    }
+
+    const rows = await response.json();
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return null;
+    }
+
+    const value = rows[0]?.value;
+    return Array.isArray(value) ? sortCards(value) : null;
+  }
+
+  async function saveCardsToSupabase(cards) {
+    const cfg = getSupabaseConfig();
+    if (!cfg.enabled) {
+      return { remote: false, reason: 'disabled' };
+    }
+
+    const endpoint = `${cfg.url}/rest/v1/site_state?on_conflict=key`;
+    const payload = [
+      {
+        key: cfg.cardsStateKey,
+        value: cards,
+      },
+    ];
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: cfg.anonKey,
+        Authorization: `Bearer ${cfg.anonKey}`,
+        Prefer: 'resolution=merge-duplicates,return=representation',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Supabase save failed: ${response.status}`);
+    }
+
+    return { remote: true };
+  }
 
   function readStorageMeta() {
     try {
@@ -694,6 +765,10 @@
   }
 
   function getCards() {
+    return clone(cardsCache);
+  }
+
+  function readLocalCardsWithDefaults() {
     try {
       const meta = readStorageMeta();
       const isCompatible = meta && meta.defaultsSignature === DEFAULTS_SIGNATURE;
@@ -728,15 +803,56 @@
     }
   }
 
-  function saveCards(cards) {
+  async function saveCards(cards) {
     const normalized = sortCards(cards);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
     writeStorageMeta();
-    return normalized;
+    cardsCache = clone(normalized);
+    emitCardsUpdated();
+
+    try {
+      const remoteResult = await saveCardsToSupabase(normalized);
+      return { cards: clone(normalized), ...remoteResult };
+    } catch (_error) {
+      return { cards: clone(normalized), remote: false, reason: 'save-failed' };
+    }
   }
 
-  function resetCards() {
-    return resetStorageToDefaults();
+  async function resetCards() {
+    const cards = resetStorageToDefaults();
+    cardsCache = clone(cards);
+    emitCardsUpdated();
+    try {
+      const remoteResult = await saveCardsToSupabase(cards);
+      return { cards: clone(cards), ...remoteResult };
+    } catch (_error) {
+      return { cards: clone(cards), remote: false, reason: 'save-failed' };
+    }
+  }
+
+  async function refreshCards() {
+    const localCards = readLocalCardsWithDefaults();
+    cardsCache = clone(localCards);
+    emitCardsUpdated();
+
+    try {
+      const remoteCards = await fetchCardsFromSupabase();
+      if (Array.isArray(remoteCards) && remoteCards.length > 0) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteCards));
+        writeStorageMeta();
+        cardsCache = clone(remoteCards);
+        emitCardsUpdated();
+        return { source: 'supabase' };
+      }
+
+      const cfg = getSupabaseConfig();
+      if (cfg.enabled) {
+        await saveCardsToSupabase(localCards);
+      }
+      return { source: 'local' };
+    } catch (_error) {
+      return { source: 'local', warning: 'supabase-unavailable' };
+    }
   }
 
   window.BitHappenCardStore = {
@@ -744,6 +860,9 @@
     getCards,
     saveCards,
     resetCards,
+    refreshCards,
     defaultCards: clone(defaultCards),
   };
+
+  refreshCards();
 })();

@@ -5,6 +5,7 @@ const megaTrigger = document.getElementById('mega-trigger');
 const planGrid = document.getElementById('plan-grid');
 
 const segments = document.querySelectorAll('.segment');
+let activeGroup = 'all';
 
 function escapeHtml(value) {
   return String(value)
@@ -16,6 +17,7 @@ function escapeHtml(value) {
 }
 
 function renderPlanCards(group = 'all') {
+  activeGroup = group;
   if (!planGrid || !window.BitHappenCardStore) {
     return;
   }
@@ -155,6 +157,10 @@ segments.forEach((segment) => {
 
     renderPlanCards(segment.dataset.group);
   });
+});
+
+window.addEventListener('bitHappenCardsUpdated', () => {
+  renderPlanCards(activeGroup);
 });
 
 const revealElements = document.querySelectorAll('.reveal');

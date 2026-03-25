@@ -30,6 +30,14 @@ function saveCards(cards) {
   return window.BitHappenCardStore.saveCards(cards);
 }
 
+async function persistCards(cards) {
+  const result = await saveCards(cards);
+  if (result && result.remote === false) {
+    alert('원격(Supabase) 저장에 실패했습니다. 네트워크/설정을 확인해 주세요.');
+  }
+  renderList();
+}
+
 function buildDefaultCardsSource(cards) {
   return `const defaultCards = ${JSON.stringify(cards, null, 2)};`;
 }
@@ -101,41 +109,37 @@ function fillForm(card) {
   fields.enabled.checked = card.enabled !== false;
 }
 
-function toggleEnabled(id) {
+async function toggleEnabled(id) {
   const cards = getCards().map((card) => {
     if (card.id !== id) return card;
     return { ...card, enabled: card.enabled === false };
   });
-  saveCards(cards);
-  renderList();
+  await persistCards(cards);
 }
 
-function updateCardSpan(id, span) {
+async function updateCardSpan(id, span) {
   const cards = getCards().map((card) => {
     if (card.id !== id) return card;
     return { ...card, span };
   });
-  saveCards(cards);
-  renderList();
+  await persistCards(cards);
 }
 
-function movePriority(id, direction) {
+async function movePriority(id, direction) {
   const cards = getCards();
   const target = cards.find((card) => card.id === id);
   if (!target) return;
 
   target.priority = Math.max(1, Number(target.priority) + direction);
-  saveCards(cards);
-  renderList();
+  await persistCards(cards);
 }
 
-function deleteCard(id) {
+async function deleteCard(id) {
   const cards = getCards().filter((card) => card.id !== id);
-  saveCards(cards);
+  await persistCards(cards);
   if (fields.id.value === id) {
     clearForm();
   }
-  renderList();
 }
 
 function renderList() {
@@ -178,7 +182,7 @@ function renderList() {
   });
 }
 
-form.addEventListener('submit', (event) => {
+form.addEventListener('submit', async (event) => {
   event.preventDefault();
 
   const isEdit = Boolean(fields.id.value);
@@ -209,16 +213,22 @@ form.addEventListener('submit', (event) => {
     next = [...cards, payload];
   }
 
-  saveCards(next);
+  await persistCards(next);
   clearForm();
-  renderList();
 });
 
 createNewButton.addEventListener('click', () => clearForm());
 
-resetButton.addEventListener('click', () => {
-  window.BitHappenCardStore.resetCards();
+resetButton.addEventListener('click', async () => {
+  const result = await window.BitHappenCardStore.resetCards();
+  if (result && result.remote === false) {
+    alert('원격(Supabase) 동기화에 실패했습니다. 로컬 기본값만 적용되었습니다.');
+  }
   clearForm();
+  renderList();
+});
+
+window.addEventListener('bitHappenCardsUpdated', () => {
   renderList();
 });
 

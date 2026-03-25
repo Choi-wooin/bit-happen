@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'bitHappenMediaLibrary_v1';
 const LIBRARY_FILE_NAME = 'media-library.js';
 const MEDIA_BASE_PATH = 'assets/media/';
+const DEFAULT_MEDIA_STATE_KEY = 'mediaLibrary';
 
 const form = document.getElementById('upload-form');
 const cardSelect = document.getElementById('card-id');
@@ -20,6 +21,7 @@ const selectedPreviewRoot = document.getElementById('selected-preview');
 const urlPreviewRoot = document.getElementById('url-preview');
 const MAX_VIDEO_UPLOAD_BYTES = 10 * 1024 * 1024;
 let selectedPreviewUrls = [];
+let libraryCache = [];
 
 function esc(value) {
   return String(value)
@@ -36,6 +38,10 @@ function getCards() {
 }
 
 function loadLibrary() {
+  return libraryCache.map((item) => ({ ...item }));
+}
+
+function loadLocalOrSourceLibrary() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -56,6 +62,7 @@ function loadLibrary() {
 }
 
 function saveLibrary(items) {
+  libraryCache = Array.isArray(items) ? items.map((item) => ({ ...item })) : [];
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   } catch (error) {
@@ -63,6 +70,100 @@ function saveLibrary(items) {
       throw new Error('브라우저 저장 공간이 부족합니다. 동영상은 assets 폴더 경로(URL) 방식으로 등록해 주세요.');
     }
     throw error;
+  }
+}
+
+function getSupabaseConfig() {
+  const cfg = window.BitHappenSupabaseConfig || {};
+  const url = String(cfg.url || '').trim().replace(/\/$/, '');
+  const anonKey = String(cfg.anonKey || '').trim();
+  const mediaStateKey = String(cfg.mediaStateKey || DEFAULT_MEDIA_STATE_KEY).trim() || DEFAULT_MEDIA_STATE_KEY;
+  const enabled = Boolean(url && anonKey);
+  return { enabled, url, anonKey, mediaStateKey };
+}
+
+async function fetchLibraryFromSupabase() {
+  const cfg = getSupabaseConfig();
+  if (!cfg.enabled) return null;
+
+  const endpoint = `${cfg.url}/rest/v1/site_state?key=eq.${encodeURIComponent(cfg.mediaStateKey)}&select=value&limit=1`;
+  const response = await fetch(endpoint, {
+    headers: {
+      apikey: cfg.anonKey,
+      Authorization: `Bearer ${cfg.anonKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase fetch failed: ${response.status}`);
+  }
+
+  const rows = await response.json();
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+
+  const value = rows[0]?.value;
+  return Array.isArray(value) ? value : null;
+}
+
+async function saveLibraryToSupabase(items) {
+  const cfg = getSupabaseConfig();
+  if (!cfg.enabled) return { remote: false, reason: 'disabled' };
+
+  const endpoint = `${cfg.url}/rest/v1/site_state?on_conflict=key`;
+  const payload = [
+    {
+      key: cfg.mediaStateKey,
+      value: items,
+    },
+  ];
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: cfg.anonKey,
+      Authorization: `Bearer ${cfg.anonKey}`,
+      Prefer: 'resolution=merge-duplicates,return=representation',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase save failed: ${response.status}`);
+  }
+
+  return { remote: true };
+}
+
+async function persistLibrary(items) {
+  saveLibrary(items);
+  try {
+    const result = await saveLibraryToSupabase(items);
+    return result;
+  } catch (_error) {
+    return { remote: false, reason: 'save-failed' };
+  }
+}
+
+async function initializeLibrary() {
+  const localOrSource = loadLocalOrSourceLibrary();
+  saveLibrary(localOrSource);
+  renderLibrary();
+
+  try {
+    const remote = await fetchLibraryFromSupabase();
+    if (Array.isArray(remote)) {
+      saveLibrary(remote);
+      renderLibrary();
+      return;
+    }
+
+    const cfg = getSupabaseConfig();
+    if (cfg.enabled && localOrSource.length > 0) {
+      await saveLibraryToSupabase(localOrSource);
+    }
+  } catch (_error) {
+    // Supabase 연결이 없거나 실패하면 로컬/소스 데이터를 유지합니다.
   }
 }
 
@@ -304,14 +405,17 @@ function renderLibrary() {
     .join('');
 
   Array.from(libraryRoot.querySelectorAll('[data-action="delete"]')).forEach((button) => {
-    button.addEventListener('click', () => {
+    button.addEventListener('click', async () => {
       const card = button.closest('.media-item');
       const id = card?.getAttribute('data-id');
       if (!id) return;
 
       const next = loadLibrary().filter((item) => item.id !== id);
-      saveLibrary(next);
+      const result = await persistLibrary(next);
       renderLibrary();
+      if (result.remote === false) {
+        alert('원격(Supabase) 동기화에 실패했습니다. 연결 상태를 확인해 주세요.');
+      }
     });
   });
 }
@@ -426,11 +530,15 @@ form.addEventListener('submit', async (event) => {
       return;
     }
 
-    saveLibrary(current);
+    const result = await persistLibrary(current);
     form.reset();
     clearSelectedPreview();
     makeCardOptions();
     renderLibrary();
+    if (result.remote === false) {
+      alert('파일은 로컬에 저장되었지만 Supabase 동기화에 실패했습니다.');
+      return;
+    }
     alert(`${uploadedCount}개 파일 업로드를 저장했습니다.`);
   } catch (error) {
     alert(error instanceof Error ? error.message : '업로드 저장 중 오류가 발생했습니다.');
@@ -489,11 +597,15 @@ addMediaUrlButton.addEventListener('click', async () => {
       height: size.height,
       createdAt: Date.now(),
     });
-    saveLibrary(current);
+    const result = await persistLibrary(current);
     mediaUrlInput.value = '';
     posterUrlInput.value = '';
     urlPreviewRoot.innerHTML = '<p class="empty">미리보기할 URL을 입력해 주세요.</p>';
     renderLibrary();
+    if (result.remote === false) {
+      alert('URL은 로컬에 저장되었지만 Supabase 동기화에 실패했습니다.');
+      return;
+    }
     alert(`${mediaType === 'video' ? '동영상' : '이미지'} URL을 라이브러리에 추가했습니다.`);
   } catch (_error) {
     alert('미디어 URL 등록 중 오류가 발생했습니다. URL을 확인해 주세요.');
@@ -533,13 +645,17 @@ copyJsonButton.addEventListener('click', async () => {
   alert('media 배열 코드가 복사되었습니다. solution-detail.js override에 붙여넣으세요.');
 });
 
-resetButton.addEventListener('click', () => {
-  if (!confirm('현재 브라우저 드래프트를 초기화할까요? (소스 파일 media-library.js 값으로 복원됩니다)')) return;
+resetButton.addEventListener('click', async () => {
+  if (!confirm('현재 미디어 라이브러리를 초기화할까요? (Supabase에도 반영됩니다)')) return;
+  const result = await persistLibrary([]);
   localStorage.removeItem(STORAGE_KEY);
   renderLibrary();
   form.reset();
   clearSelectedPreview();
   renderUrlPreview();
+  if (result.remote === false) {
+    alert('초기화는 로컬에만 반영되었습니다. Supabase 동기화에 실패했습니다.');
+  }
 });
 
 copyLibraryFileButton.addEventListener('click', async () => {
@@ -550,6 +666,6 @@ copyLibraryFileButton.addEventListener('click', async () => {
 });
 
 makeCardOptions();
-renderLibrary();
 clearSelectedPreview();
 renderUrlPreview();
+initializeLibrary();

@@ -73,6 +73,51 @@ function getSourceLibraryMediaItemsByCardId(cardId) {
   );
 }
 
+function getSupabaseConfig() {
+  const cfg = window.BitHappenSupabaseConfig || {};
+  const url = String(cfg.url || '').trim().replace(/\/$/, '');
+  const anonKey = String(cfg.anonKey || '').trim();
+  const mediaStateKey = String(cfg.mediaStateKey || 'mediaLibrary').trim() || 'mediaLibrary';
+  const enabled = Boolean(url && anonKey);
+  return { enabled, url, anonKey, mediaStateKey };
+}
+
+async function getSupabaseMediaItemsByCardId(cardId) {
+  if (!cardId) return [];
+
+  const cfg = getSupabaseConfig();
+  if (!cfg.enabled) return [];
+
+  try {
+    const endpoint = `${cfg.url}/rest/v1/site_state?key=eq.${encodeURIComponent(cfg.mediaStateKey)}&select=value&limit=1`;
+    const response = await fetch(endpoint, {
+      headers: {
+        apikey: cfg.anonKey,
+        Authorization: `Bearer ${cfg.anonKey}`,
+      },
+    });
+
+    if (!response.ok) return [];
+    const rows = await response.json();
+    const items = rows?.[0]?.value;
+    if (!Array.isArray(items)) return [];
+
+    return normalizeMediaItems(
+      items
+        .filter((item) => item && item.cardId === cardId)
+        .sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0))
+        .map((item) => ({
+          type: item.type,
+          src: item.src,
+          title: item.title,
+          poster: item.poster,
+        }))
+    );
+  } catch (_error) {
+    return [];
+  }
+}
+
 function renderMediaSection(mediaItems) {
   if (!mediaItems.length) {
     return `
@@ -293,7 +338,7 @@ function getQueryId() {
   return params.get('id');
 }
 
-function render() {
+async function render() {
   if (!window.BitHappenCardStore) return;
   const root = document.getElementById('detail-root');
   const cards = window.BitHappenCardStore.getCards();
@@ -318,9 +363,12 @@ function render() {
   const integrationItems = override?.integration || groupText.integration;
   const overrideMedia = normalizeMediaItems(override?.media || []);
   const cardMedia = normalizeMediaItems(card.media || []);
+  const supabaseMedia = await getSupabaseMediaItemsByCardId(card.id);
   const sourceLibraryMedia = getSourceLibraryMediaItemsByCardId(card.id);
   const localDraftMedia = getLocalDraftMediaItemsByCardId(card.id);
-  const mediaItems = sourceLibraryMedia.length
+  const mediaItems = supabaseMedia.length
+    ? supabaseMedia
+    : sourceLibraryMedia.length
     ? sourceLibraryMedia
     : localDraftMedia.length
     ? localDraftMedia
@@ -447,3 +495,4 @@ function render() {
 }
 
 render();
+window.addEventListener('bitHappenCardsUpdated', render);
