@@ -491,12 +491,6 @@ h2 {
 }
 
 .plan-card.wide {
-  --card-min-h: 420px;
-  min-height: var(--card-min-h);
-  height: var(--card-min-h);
-}
-
-.plan-card.wide.has-lead-thumb {
   --card-min-h: 485px;
   min-height: var(--card-min-h);
   height: var(--card-min-h);
