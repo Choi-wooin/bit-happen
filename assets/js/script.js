@@ -50,7 +50,7 @@ function renderPlanCards(group = 'all') {
 
     const ctaStyle = card.ctaStyle === 'ghost' ? 'ghost' : 'primary';
     const ctaLabel = '상세보기';
-    const detailHref = `solution-detail.html?id=${encodeURIComponent(card.id)}`;
+    const detailHref = `pages/solution-detail.html?id=${encodeURIComponent(card.id)}`;
 
     article.innerHTML = `
       <p class="plan-badge">${escapeHtml(card.badge || 'Package')}</p>
