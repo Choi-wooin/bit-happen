@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BIT HAPPENS | Admin Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Manrope:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="admin.css" />
+  </head>
+  <body>
+    <main class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="brand">
+          <p class="eyebrow">ADMIN CONSOLE</p>
+          <h1>BIT HAPPENS</h1>
+          <p id="session-user" class="session-user"></p>
+        </div>
+
+        <nav class="menu" id="menu-root">
+          <button type="button" data-page="manager.html" class="active">카드 관리자</button>
+          <button type="button" data-page="media-manager.html">미디어 관리자</button>
+        </nav>
+
+        <div class="sidebar-actions">
+          <button type="button" id="logout-btn">로그아웃</button>
+        </div>
+      </aside>
+
+      <section class="admin-content">
+        <iframe id="admin-frame" title="관리자 콘텐츠" src="manager.html"></iframe>
+      </section>
+    </main>
+
+    <script src="supabase-config.js?v=20260325"></script>
+    <script src="admin-auth.js?v=20260325"></script>
+    <script src="admin.js?v=20260325"></script>
+  </body>
+</html>

@@ -1,3 +1,8 @@
+const __session = window.BitHappenAdminAuth?.requireAuth?.();
+if (!__session) {
+  throw new Error('not authenticated');
+}
+
 const STORAGE_KEY = 'bitHappenMediaLibrary_v1';
 const LIBRARY_FILE_NAME = 'media-library.js';
 const MEDIA_BASE_PATH = 'assets/media/';

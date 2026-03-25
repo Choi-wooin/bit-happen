@@ -7,4 +7,6 @@ window.BitHappenSupabaseConfig = {
   cardsStateKey: 'cards',
   // 미디어 라이브러리 상태를 저장할 키
   mediaStateKey: 'mediaLibrary',
+  // 관리자 계정 상태를 저장할 키
+  adminStateKey: 'adminUsers',
 };

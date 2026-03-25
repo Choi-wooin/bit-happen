@@ -1,3 +1,8 @@
+const __session = window.BitHappenAdminAuth?.requireAuth?.();
+if (!__session) {
+  throw new Error('not authenticated');
+}
+
 const form = document.getElementById('card-form');
 const listRoot = document.getElementById('card-list');
 const resetButton = document.getElementById('reset-cards');

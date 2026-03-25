@@ -1,0 +1,85 @@
+:root {
+  --bg: #f0f4f9;
+  --panel: #ffffff;
+  --line: #d8e1eb;
+  --text: #16202a;
+  --muted: #5f6f82;
+  --brand: #146de0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Noto Sans KR", sans-serif;
+  color: var(--text);
+  background: radial-gradient(circle at 15% 20%, #dbe9fb 0%, #f0f4f9 45%, #e8eef6 100%);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.login-wrap {
+  width: min(100%, 440px);
+}
+
+.login-panel {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  padding: 24px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  font-weight: 800;
+  color: #275f99;
+}
+
+h1 {
+  margin: 8px 0 4px;
+  font-family: "Manrope", sans-serif;
+}
+
+.sub {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+form {
+  display: grid;
+  gap: 10px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+input {
+  border: 1px solid var(--line);
+  padding: 10px;
+  font: inherit;
+}
+
+button {
+  border: 0;
+  background: var(--brand);
+  color: #fff;
+  padding: 11px 14px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.message {
+  min-height: 20px;
+  margin: 10px 0 0;
+  color: #bf1f3d;
+  font-size: 0.9rem;
+}

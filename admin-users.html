@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BIT HAPPENS | Admin Users</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Manrope:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="admin-users.css" />
+  </head>
+  <body>
+    <main class="users-layout">
+      <section class="panel">
+        <h1>사용자 관리</h1>
+        <p class="hint">super admin만 신규 계정 생성 및 비밀번호 변경이 가능합니다.</p>
+
+        <form id="create-user-form" class="form-block">
+          <h2>새 계정 만들기</h2>
+          <label>아이디
+            <input id="new-user-id" required />
+          </label>
+          <label>비밀번호
+            <input id="new-user-password" type="password" required />
+          </label>
+          <label>역할
+            <select id="new-user-role">
+              <option value="admin">admin</option>
+              <option value="super_admin">super_admin</option>
+            </select>
+          </label>
+          <button type="submit">계정 생성</button>
+        </form>
+
+        <form id="change-password-form" class="form-block">
+          <h2>비밀번호 변경</h2>
+          <label>대상 아이디
+            <input id="target-user-id" required />
+          </label>
+          <label>새 비밀번호
+            <input id="target-user-password" type="password" required />
+          </label>
+          <button type="submit">비밀번호 변경</button>
+        </form>
+
+        <p id="users-message" class="message"></p>
+      </section>
+
+      <section class="panel">
+        <h2>계정 목록</h2>
+        <div id="users-list" class="list"></div>
+      </section>
+    </main>
+
+    <script src="supabase-config.js?v=20260325"></script>
+    <script src="admin-auth.js?v=20260325"></script>
+    <script src="admin-users.js?v=20260325"></script>
+  </body>
+</html>

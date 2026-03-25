@@ -32,5 +32,13 @@ with check (true);
 ## 프로젝트 파일 설정
 
 1. `supabase-config.js`에 `url`, `anonKey` 입력
+2. `cardsStateKey`, `mediaStateKey`, `adminStateKey`는 기본값 사용 가능
 2. 사이트 배포
 3. 관리자 페이지에서 카드 저장 시 Supabase에 동기화
+
+## 관리자 계정 초기값
+
+- 첫 로그인 시 `adminUsers` 상태키가 비어 있으면 아래 계정이 자동 생성됩니다.
+- id: `admin`
+- password: `iloveyou12#$`
+- role: `super_admin`
