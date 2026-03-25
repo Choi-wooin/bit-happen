@@ -245,7 +245,7 @@ h1 {
 
 .media-frame {
   --ratio: 1.777;
-  --media-h: clamp(180px, 30vw, 280px);
+  --media-h: clamp(270px, 45vw, 420px);
   width: calc(var(--media-h) * var(--ratio));
   height: var(--media-h);
   border: 1px solid var(--line);
@@ -366,6 +366,6 @@ h1 {
   }
 
   .media-frame {
-    --media-h: 180px;
+    --media-h: 270px;
   }
 }

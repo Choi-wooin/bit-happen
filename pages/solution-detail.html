@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
@@ -23,9 +23,17 @@
 
     <main class="container" id="detail-root"></main>
 
-    <script src="../assets/js/supabase-config.js?v=20260325"></script>
-    <script src="../assets/js/cards-data.js?v=20260325"></script>
-    <script src="../assets/js/media-library.js?v=20260325"></script>
-    <script src="../assets/js/solution-detail.js?v=20260325"></script>
+    <script src="../assets/js/app-version.js"></script>
+    <script src="../assets/js/asset-loader.js"></script>
+    <script>
+      window.BitHappenLoadScripts([
+        '../assets/js/supabase-config.js',
+        '../assets/js/cards-data.js',
+        '../assets/js/media-library.js',
+        '../assets/js/detail-defaults.js',
+        '../assets/js/solution-detail.js',
+      ]);
+    </script>
   </body>
 </html>
+

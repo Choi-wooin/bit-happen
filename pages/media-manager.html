@@ -95,10 +95,16 @@
       </section>
     </main>
 
-    <script src="../assets/js/supabase-config.js?v=20260325"></script>
-    <script src="../assets/js/admin-auth.js?v=20260325"></script>
-    <script src="../assets/js/cards-data.js?v=20260325"></script>
-    <script src="../assets/js/media-library.js?v=20260325"></script>
-    <script src="../assets/js/media-manager.js?v=20260325"></script>
+    <script src="../assets/js/app-version.js"></script>
+    <script src="../assets/js/asset-loader.js"></script>
+    <script>
+      window.BitHappenLoadScripts([
+        '../assets/js/supabase-config.js',
+        '../assets/js/admin-auth.js',
+        '../assets/js/cards-data.js',
+        '../assets/js/media-library.js',
+        '../assets/js/media-manager.js',
+      ]);
+    </script>
   </body>
 </html>

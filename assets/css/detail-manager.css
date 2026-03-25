@@ -1,0 +1,92 @@
+:root {
+  --line: #d8e1eb;
+  --text: #1e2732;
+  --muted: #657688;
+  --brand: #1b69d8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Noto Sans KR", sans-serif;
+  color: var(--text);
+}
+
+.detail-layout {
+  padding: 16px;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 14px;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-family: "Manrope", sans-serif;
+}
+
+.hint {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+form {
+  display: grid;
+  gap: 10px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+select,
+textarea {
+  border: 1px solid var(--line);
+  padding: 9px 10px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions button {
+  border: 0;
+  padding: 9px 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.actions button:first-child {
+  background: var(--brand);
+  color: #fff;
+}
+
+.actions button:last-child {
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.message {
+  min-height: 20px;
+  margin: 10px 0 0;
+  color: #b61d3a;
+  font-size: 0.9rem;
+}

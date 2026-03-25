@@ -9,4 +9,6 @@ window.BitHappenSupabaseConfig = {
   mediaStateKey: 'mediaLibrary',
   // 관리자 계정 상태를 저장할 키
   adminStateKey: 'adminUsers',
+  // 상세페이지 오버라이드 상태를 저장할 키
+  detailStateKey: 'detailOverrides',
 };

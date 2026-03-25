@@ -6,7 +6,7 @@
     <title>BIT HAPPENS | Main Page</title>
     <meta
       name="description"
-      content="BIT HAPPENS(비트해픈) 메인 페이지 - Adobe식 정보 구조를 참고한 솔루션 중심 홈페이지"
+      content="BIT HAPPENS(비트해픈) 메인 페이지 - 솔루션 중심 홈페이지"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -98,9 +98,8 @@
           <p class="label">NO FATE BUT WHAT WE MAKE</p>
           <h1>필요한 솔루션을 빠르게 선택하고, 바로 도입하세요.</h1>
           <p>
-            비트해픈 메인 페이지는 Adobe식 탐색 경험을 참고해 설계되었습니다.
-            많은 제품을 잃지 않고 찾을 수 있도록 카테고리, 패키지, 검색 흐름을 단순화했습니다.
-            각 패키지 카드에는 적용 산업, 구축 범위, 연동 시스템 정보를 함께 제공해 의사결정을 빠르게 돕습니다.
+            비트해픈 메인 페이지는 많은 솔루션을 빠르게 찾을 수 있도록 구성되어 있습니다.
+            카드 기반 탐색 구조를 통해 적용 산업, 구축 기간, 연동 범위를 쉽게 비교할 수 있습니다.
           </p>
           <div class="hero-actions">
             <a class="btn primary" href="#plans">패키지 보기</a>
@@ -129,7 +128,7 @@
       <section class="container" id="plans">
         <div class="section-head">
           <h2>대표 도입 패키지</h2>
-          <p>플랜 페이지 UX를 참고해 비교가 쉬운 카드 중심 구조로 구성했습니다.</p>
+          <p>필터 기반으로 카드를 빠르게 탐색하고 비교하세요.</p>
         </div>
 
         <div class="segment-control" role="tablist" aria-label="사업영역 필터">
@@ -146,7 +145,7 @@
         <div class="section-head between">
           <div>
             <h2>솔루션 카탈로그</h2>
-            <p>제품이 많아도 빠르게 찾을 수 있도록 문제, 산업, 기술 축으로 분류합니다.</p>
+            <p>문제, 산업, 기술 축으로 제품을 분류해 탐색합니다.</p>
           </div>
           <a href="#contact" class="text-link">전체 리스트 요청</a>
         </div>
@@ -154,7 +153,7 @@
         <div class="catalog-grid">
           <article>
             <h3>문제 기반</h3>
-            <p>대기시간 단축, 무인 운영, 인증 강화, 품질 검증 자동화, 고객 경험 개선</p>
+            <p>대기시간 단축, 무인 운영, 인증 강화, 품질 검증 자동화</p>
           </article>
           <article>
             <h3>산업 기반</h3>
@@ -239,15 +238,15 @@
         <div class="faq-list">
           <details>
             <summary>50개 이상의 제품을 어떻게 관리하나요?</summary>
-            <p>공통 메타데이터(문제/산업/기술)를 기준으로 제품을 태깅하여 탐색 구조를 일관되게 유지합니다.</p>
+            <p>공통 메타데이터를 기준으로 제품을 태깅하여 탐색 구조를 일관되게 유지합니다.</p>
           </details>
           <details>
             <summary>기존 시스템과 연동 가능한가요?</summary>
-            <p>API 중심 아키텍처를 기본으로, 현장 장비 및 백오피스 시스템과 단계적으로 연동합니다.</p>
+            <p>API 중심 아키텍처를 기본으로 현장 장비 및 백오피스와 단계적으로 연동합니다.</p>
           </details>
           <details>
             <summary>도입 기간은 어느 정도인가요?</summary>
-            <p>패키지별로 다르지만, 파일럿은 보통 4~8주, 확장은 현장 범위에 맞춰 커스터마이즈합니다.</p>
+            <p>패키지별로 다르지만 파일럿은 보통 4~8주, 확장은 범위에 맞춰 커스터마이즈합니다.</p>
           </details>
         </div>
       </section>
@@ -267,8 +266,10 @@
       <a class="admin-entry" href="pages/login.html" aria-label="관리자 로그인">관리자</a>
     </footer>
 
-    <script src="assets/js/supabase-config.js"></script>
-    <script src="assets/js/cards-data.js"></script>
-    <script src="assets/js/script.js"></script>
+    <script src="assets/js/app-version.js"></script>
+    <script src="assets/js/asset-loader.js"></script>
+    <script>
+      window.BitHappenLoadScripts(['assets/js/supabase-config.js', 'assets/js/cards-data.js', 'assets/js/script.js']);
+    </script>
   </body>
 </html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BIT HAPPENS | Detail Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Manrope:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/css/detail-manager.css" />
+  </head>
+  <body>
+    <main class="detail-layout">
+      <section class="panel form-panel">
+        <h1>상세페이지 관리</h1>
+        <p class="hint">카드별 상세페이지 텍스트를 입력/수정합니다. 비워두면 기본값이 사용됩니다.</p>
+
+        <form id="detail-form">
+          <label>대상 카드
+            <select id="detail-card-id" required></select>
+          </label>
+
+          <label>문제 정의 (줄바꿈 구분)
+            <textarea id="detail-pains" rows="4" placeholder="예: 문제 1\n문제 2"></textarea>
+          </label>
+
+          <label>해결 방식 (줄바꿈 구분)
+            <textarea id="detail-how" rows="4" placeholder="예: 방식 1\n방식 2"></textarea>
+          </label>
+
+          <label>핵심 기능 (줄바꿈 구분)
+            <textarea id="detail-features" rows="5" placeholder="예: 기능 1\n기능 2"></textarea>
+          </label>
+
+          <label>적용 시나리오 (줄바꿈 구분)
+            <textarea id="detail-scenarios" rows="4" placeholder="예: 시나리오 1\n시나리오 2"></textarea>
+          </label>
+
+          <label>기술 연동 (줄바꿈 구분)
+            <textarea id="detail-integration" rows="4" placeholder="예: API 1\nAPI 2"></textarea>
+          </label>
+
+          <label>기술 스펙 (JSON 배열, 선택)
+            <textarea
+              id="detail-tech-specs"
+              rows="6"
+              placeholder='[ { "title": "Backend", "items": ["FastAPI", "WebSocket"] } ]'
+            ></textarea>
+          </label>
+
+          <label>KPI (JSON 배열, 선택)
+            <textarea
+              id="detail-kpis"
+              rows="5"
+              placeholder='[ { "value": "+20%", "title": "효율", "desc": "설명" } ]'
+            ></textarea>
+          </label>
+
+          <div class="actions">
+            <button type="submit">상세 내용 저장</button>
+            <button type="button" id="detail-clear">현재 카드 입력값 비우기</button>
+          </div>
+        </form>
+
+        <p id="detail-message" class="message"></p>
+      </section>
+    </main>
+
+    <script src="../assets/js/app-version.js"></script>
+    <script src="../assets/js/asset-loader.js"></script>
+    <script>
+      window.BitHappenLoadScripts([
+        '../assets/js/supabase-config.js',
+        '../assets/js/admin-auth.js',
+        '../assets/js/cards-data.js',
+        '../assets/js/detail-defaults.js',
+        '../assets/js/detail-manager.js',
+      ]);
+    </script>
+  </body>
+</html>

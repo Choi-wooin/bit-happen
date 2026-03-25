@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
@@ -24,6 +24,7 @@
         <nav class="menu" id="menu-root">
           <button type="button" data-page="manager.html" class="active">카드 관리자</button>
           <button type="button" data-page="media-manager.html">미디어 관리자</button>
+          <button type="button" data-page="detail-manager.html">상세페이지 관리</button>
         </nav>
 
         <div class="sidebar-actions">
@@ -36,8 +37,10 @@
       </section>
     </main>
 
-    <script src="../assets/js/supabase-config.js?v=20260325"></script>
-    <script src="../assets/js/admin-auth.js?v=20260325"></script>
-    <script src="../assets/js/admin.js?v=20260325"></script>
+    <script src="../assets/js/app-version.js"></script>
+    <script src="../assets/js/asset-loader.js"></script>
+    <script>
+      window.BitHappenLoadScripts(['../assets/js/supabase-config.js', '../assets/js/admin-auth.js', '../assets/js/admin.js']);
+    </script>
   </body>
 </html>

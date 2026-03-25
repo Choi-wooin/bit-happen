@@ -51,6 +51,7 @@ with check (true);
 - `cards`: 카드 우선순위/크기/표시여부 등 카드 상태
 - `mediaLibrary`: 상세 페이지 미디어 라이브러리 상태
 - `adminUsers`: 관리자 계정 상태
+- `detailOverrides`: 상세페이지 텍스트/구성 오버라이드 상태
 
 ## 관리자 계정 초기값
 

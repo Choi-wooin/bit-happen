@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
@@ -55,8 +55,14 @@
       </section>
     </main>
 
-    <script src="../assets/js/supabase-config.js?v=20260325"></script>
-    <script src="../assets/js/admin-auth.js?v=20260325"></script>
-    <script src="../assets/js/admin-users.js?v=20260325"></script>
+    <script src="../assets/js/app-version.js"></script>
+    <script src="../assets/js/asset-loader.js"></script>
+    <script>
+      window.BitHappenLoadScripts([
+        '../assets/js/supabase-config.js',
+        '../assets/js/admin-auth.js',
+        '../assets/js/admin-users.js',
+      ]);
+    </script>
   </body>
 </html>
