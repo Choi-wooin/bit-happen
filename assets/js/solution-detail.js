@@ -11,6 +11,17 @@ function mediaTypeLabel(type) {
   return type === 'video' ? 'VIDEO' : 'IMAGE';
 }
 
+function resolveMediaPath(src) {
+  const value = String(src || '').trim();
+  if (!value) return '';
+
+  if (/^(https?:|data:|blob:)/i.test(value)) return value;
+  if (value.startsWith('/')) return value;
+  if (value.startsWith('../') || value.startsWith('./')) return value;
+  if (value.startsWith('assets/')) return `../${value}`;
+  return value;
+}
+
 function normalizeMediaItems(items) {
   if (!Array.isArray(items)) return [];
 
@@ -22,9 +33,9 @@ function normalizeMediaItems(items) {
 
       return {
         type,
-        src,
+        src: resolveMediaPath(src),
         title: String(item?.title || '').trim(),
-        poster: String(item?.poster || '').trim(),
+        poster: resolveMediaPath(item?.poster || ''),
       };
     })
     .filter(Boolean);

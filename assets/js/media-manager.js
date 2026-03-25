@@ -5,7 +5,7 @@ if (!__session) {
 
 const STORAGE_KEY = 'bitHappenMediaLibrary_v1';
 const LIBRARY_FILE_NAME = 'media-library.js';
-const MEDIA_BASE_PATH = 'assets/media/';
+const MEDIA_BASE_PATH = '../assets/media/';
 const DEFAULT_MEDIA_STATE_KEY = 'mediaLibrary';
 
 const form = document.getElementById('upload-form');
@@ -35,6 +35,17 @@ function esc(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function resolveMediaPath(src) {
+  const value = String(src || '').trim();
+  if (!value) return '';
+
+  if (/^(https?:|data:|blob:)/i.test(value)) return value;
+  if (value.startsWith('/')) return value;
+  if (value.startsWith('../') || value.startsWith('./')) return value;
+  if (value.startsWith('assets/')) return `../${value}`;
+  return value;
 }
 
 function getCards() {
@@ -196,7 +207,7 @@ function getImageSize(src) {
     const img = new Image();
     img.onload = () => resolve({ width: img.naturalWidth || 0, height: img.naturalHeight || 0 });
     img.onerror = () => resolve({ width: 0, height: 0 });
-    img.src = src;
+    img.src = resolveMediaPath(src);
   });
 }
 
@@ -214,7 +225,7 @@ function getVideoSize(src) {
       clearTimeout(fallback);
       resolve({ width: 0, height: 0 });
     };
-    video.src = src;
+    video.src = resolveMediaPath(src);
   });
 }
 
@@ -385,8 +396,8 @@ function renderLibrary() {
       const mediaType = item.type === 'video' ? 'VIDEO' : 'IMAGE';
       const preview =
         item.type === 'video'
-          ? `<video src="${esc(item.src)}" ${item.poster ? `poster="${esc(item.poster)}"` : ''} preload="metadata" muted playsinline></video>`
-          : `<img src="${esc(item.src)}" alt="${esc(title)}" loading="lazy" />`;
+          ? `<video src="${esc(resolveMediaPath(item.src))}" ${item.poster ? `poster="${esc(resolveMediaPath(item.poster))}"` : ''} preload="metadata" muted playsinline></video>`
+          : `<img src="${esc(resolveMediaPath(item.src))}" alt="${esc(title)}" loading="lazy" />`;
       const sourceLabel = item.sourceMode === 'url' ? 'URL 등록' : '파일 업로드';
       return `
         <article class="media-item" data-id="${item.id}">
@@ -453,8 +464,8 @@ function renderUrlPreview() {
   const title = String(titleInput.value || '').trim() || fileName || mediaType;
   const preview =
     mediaType === 'video'
-      ? `<video src="${esc(url)}" ${poster ? `poster="${esc(poster)}"` : ''} preload="metadata" muted playsinline></video>`
-      : `<img src="${esc(url)}" alt="${esc(title)}" loading="lazy" />`;
+      ? `<video src="${esc(resolveMediaPath(url))}" ${poster ? `poster="${esc(resolveMediaPath(poster))}"` : ''} preload="metadata" muted playsinline></video>`
+      : `<img src="${esc(resolveMediaPath(url))}" alt="${esc(title)}" loading="lazy" />`;
 
   urlPreviewRoot.innerHTML = `
     <article class="media-item">
