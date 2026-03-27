@@ -74,9 +74,48 @@ a {
 }
 
 .logo {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  min-width: 220px;
+  min-height: 50px;
+  padding: 5px 10px;
+  background: linear-gradient(140deg, #ffe988, #ffe06b);
+  border: 1px solid #d3bc59;
+  box-shadow: 0 10px 18px rgba(120, 92, 15, 0.18);
+  transform: rotate(-2deg);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.logo:hover {
+  transform: rotate(-1deg) translateY(-1px);
+  box-shadow: 0 14px 24px rgba(120, 92, 15, 0.22);
+}
+
+.logo:focus-visible {
+  outline: 2px solid #8cbcff;
+  outline-offset: 4px;
+}
+
+.logo .note-brand {
+  margin: 0 0 4px;
+  font-size: 1.16rem;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.logo .note-copy {
+  font-size: 0.76rem;
+  line-height: 1.3;
+  max-width: 25ch;
+}
+
+.logo .note-pin {
+  right: 12px;
+  top: -7px;
 }
 
 .logo-mark {
@@ -202,17 +241,17 @@ a {
 }
 
 main {
-  padding: 40px 0 80px;
+  padding: 20px 0 40px;
 }
 
 .hero {
-  background: #fff;
+  background: var(--bg);
   border-radius: 22px;
-  border: 1px solid var(--line);
-  padding: clamp(20px, 4vw, 44px);
+  padding-block: clamp(10px, 2vw, 22px);
+  padding-inline: 0;
   display: grid;
   gap: 20px;
-  grid-template-columns: 1.2fr 0.8fr 0.85fr;
+  grid-template-columns: 1fr;
   align-items: start;
 }
 
@@ -298,6 +337,22 @@ h2 {
   max-width: 58ch;
 }
 
+.hero-copy .hero-lead {
+  font-size: 150%;
+  line-height: 1.6;
+  max-width: none;
+}
+
+.hero-copy .hero-lead-nowrap {
+  display: block;
+  width: max-content;
+  white-space: nowrap;
+}
+
+.hero-copy h1 {
+  font-size: clamp(1.4rem, 2.94vw, 2.38rem);
+}
+
 .hero-actions {
   display: flex;
   gap: 10px;
@@ -340,12 +395,20 @@ h2 {
   margin: 14px 0 0;
   padding: 0;
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
 .hero-panel li {
   display: grid;
-  gap: 2px;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.hero-panel li strong {
+  font-family: "Manrope", sans-serif;
 }
 
 .hero-panel span {
@@ -367,6 +430,10 @@ h2 {
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
+}
+
+#plans {
+  scroll-margin-top: 140px;
 }
 
 .text-link {
@@ -599,6 +666,46 @@ h2 {
   gap: 12px;
 }
 
+.insight-section {
+  margin-top: 28px;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.insight-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+}
+
+.insight-label {
+  margin: 0 0 8px;
+  color: #5e6470;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.insight-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.insight-card ul {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: #3e454c;
+  font-size: 0.9rem;
+}
+
 .catalog-grid article {
   background: #fff;
   border: 1px solid var(--line);
@@ -750,6 +857,7 @@ h2 {
 @media (max-width: 1100px) {
   .mega-columns,
   .plan-grid,
+  .insight-grid,
   .catalog-grid,
   .process-grid,
   .metric-grid {
@@ -838,6 +946,7 @@ h2 {
 
   .mega-columns,
   .plan-grid,
+  .insight-grid,
   .catalog-grid,
   .process-grid,
   .metric-grid {

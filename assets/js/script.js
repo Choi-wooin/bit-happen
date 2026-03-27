@@ -188,40 +188,48 @@ async function renderPlanCards(group = 'all') {
 }
 
 function openMega() {
+  if (!megaHost || !megaTrigger) {
+    return;
+  }
   megaHost.classList.add('open');
   megaTrigger.setAttribute('aria-expanded', 'true');
 }
 
 function closeMega() {
+  if (!megaHost || !megaTrigger) {
+    return;
+  }
   megaHost.classList.remove('open');
   megaTrigger.setAttribute('aria-expanded', 'false');
 }
 
-megaTrigger.addEventListener('click', () => {
-  if (megaHost.classList.contains('open')) {
-    closeMega();
-  } else {
-    openMega();
-  }
-});
-
-megaHost.addEventListener('mouseenter', () => {
-  if (window.matchMedia('(min-width: 781px)').matches) {
-    openMega();
-  }
-});
-
-megaHost.addEventListener('mouseleave', () => {
-  if (window.matchMedia('(min-width: 781px)').matches) {
-    closeMega();
-  }
-});
-
 document.addEventListener('click', (event) => {
-  if (!megaHost.contains(event.target)) {
+  if (megaHost && !megaHost.contains(event.target)) {
     closeMega();
   }
 });
+
+if (megaHost && megaTrigger) {
+  megaTrigger.addEventListener('click', () => {
+    if (megaHost.classList.contains('open')) {
+      closeMega();
+    } else {
+      openMega();
+    }
+  });
+
+  megaHost.addEventListener('mouseenter', () => {
+    if (window.matchMedia('(min-width: 781px)').matches) {
+      openMega();
+    }
+  });
+
+  megaHost.addEventListener('mouseleave', () => {
+    if (window.matchMedia('(min-width: 781px)').matches) {
+      closeMega();
+    }
+  });
+}
 
 menuToggle.addEventListener('click', () => {
   const isOpen = header.classList.toggle('nav-open');
@@ -233,6 +241,24 @@ document.querySelectorAll('.nav a[href^="#"]').forEach((link) => {
     header.classList.remove('nav-open');
     menuToggle.setAttribute('aria-expanded', 'false');
     closeMega();
+  });
+});
+
+document.querySelectorAll('.nav a[data-group]').forEach((link) => {
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+
+    const targetGroup = link.dataset.group;
+    const targetSegment = document.querySelector(`.segment[data-group="${targetGroup}"]`);
+    const plansSection = document.getElementById('plans');
+
+    if (targetSegment) {
+      targetSegment.click();
+    }
+
+    if (plansSection) {
+      plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   });
 });
 

@@ -6,7 +6,7 @@
     <title>BIT HAPPENS | Main Page</title>
     <meta
       name="description"
-      content="BIT HAPPENS(비트해픈) 메인 페이지 - 솔루션 중심 홈페이지"
+      content="BIT HAPPENS(비트해픈) 메인 페이지 - 비트해픈 서비스 솔루션 홈페이지"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -18,18 +18,19 @@
   </head>
   <body>
     <div class="top-banner">
-      <p>50+ 솔루션 통합 카탈로그 공개 | 공항, 키오스크, AI 도입 상담 오픈</p>
+      <p>서비스 솔루션 통합 카탈로그 | 키오스크, AI, 공항 도입 상담 오픈</p>
       <a href="#contact">문의하기</a>
     </div>
 
     <header class="header">
       <div class="header-inner container">
-        <a class="logo" href="#">
-          <span class="logo-mark">BH</span>
-          <span class="logo-text">
-            <strong>BIT HAPPENS</strong>
-            <small>필연적인 소프트웨어</small>
-          </span>
+        <a class="logo" href="index.html" aria-label="BIT HAPPENS 홈으로 이동">
+          <!-- <p class="note-head">brand memo</p> -->
+          <p class="note-brand">BIT HAPPENS</p>
+          <p class="note-copy">
+            "일어날 일은 반드시 일어난다"
+          </p>
+          <span class="note-pin" aria-hidden="true"></span>
         </a>
 
         <button class="menu-toggle" aria-label="모바일 메뉴" aria-expanded="false">
@@ -38,54 +39,10 @@
 
         <nav class="nav" aria-label="주요 탐색">
           <ul>
-            <li class="has-mega" id="mega-host">
-              <button class="nav-button" id="mega-trigger" aria-expanded="false">Solutions</button>
-              <section class="mega-menu" aria-label="메가 메뉴">
-                <div class="mega-columns">
-                  <article>
-                    <h3>Kiosk</h3>
-                    <p>리테일/공공 현장을 위한 인터랙티브 플랫폼</p>
-                    <ul>
-                      <li>통합 길찾기</li>
-                      <li>민원 키오스크</li>
-                      <li>POS/CMS 운영</li>
-                    </ul>
-                  </article>
-                  <article>
-                    <h3>AI</h3>
-                    <p>멀티모달 기반 산업형 AI 제품군</p>
-                    <ul>
-                      <li>QuickClip</li>
-                      <li>SmartFaceEngine</li>
-                      <li>RuView</li>
-                    </ul>
-                  </article>
-                  <article>
-                    <h3>Airport</h3>
-                    <p>One ID, 보안 게이트, 수하물 운영 자동화</p>
-                    <ul>
-                      <li>스마트 체크인</li>
-                      <li>환승 보안 시스템</li>
-                      <li>Self Bag Drop 관제</li>
-                    </ul>
-                  </article>
-                  <article>
-                    <h3>Resources</h3>
-                    <p>문서, 사례, 기술 업데이트</p>
-                    <ul>
-                      <li>Documentation</li>
-                      <li>Case Studies</li>
-                      <li>Blog</li>
-                    </ul>
-                  </article>
-                </div>
-                <a class="mega-footer" href="#catalog">모든 솔루션 보기</a>
-              </section>
-            </li>
-            <li><a href="#plans">Packages</a></li>
-            <li><a href="#catalog">Catalog</a></li>
-            <li><a href="#faq">FAQ</a></li>
-            <li><a href="pages/login.html">Admin Login</a></li>
+            <li><a href="#plans" data-group="all">전체</a></li>
+            <li><a href="#plans" data-group="kiosk">Kiosk</a></li>
+            <li><a href="#plans" data-group="ai">AI</a></li>
+            <li><a href="#plans" data-group="airport">Airport</a></li>
             <li><a class="cta-mini" href="#contact">Contact</a></li>
           </ul>
         </nav>
@@ -95,40 +52,258 @@
     <main>
       <section class="hero container reveal">
         <div class="hero-copy">
-          <p class="label">NO FATE BUT WHAT WE MAKE</p>
-          <h1>필요한 솔루션을 빠르게 선택하고, 바로 도입하세요.</h1>
-          <p>
-            비트해픈 메인 페이지는 많은 솔루션을 빠르게 찾을 수 있도록 구성되어 있습니다.
-            카드 기반 탐색 구조를 통해 적용 산업, 구축 기간, 연동 범위를 쉽게 비교할 수 있습니다.
+          <!-- <p class="label">NO FATE BUT WHAT WE MAKE</p> -->
+          <h1>검증된 서비스와 솔루션을 빠르게 선택하고, 바로 도입하세요.</h1>
+          <p class="hero-lead">
+            AI 기술의 실질적 산업 적용을 위한 끊임없는 연구와 개발을 통하여,
+            <span class="hero-lead-nowrap">온디바이스 AI와 멀티모달 파이프라인을 통한 차세대 AI 솔루션을 제공하겠습니다.</span>
           </p>
-          <div class="hero-actions">
+          <!-- <div class="hero-actions">
             <a class="btn primary" href="#plans">패키지 보기</a>
             <a class="btn ghost" href="#catalog">전체 카탈로그</a>
-          </div>
+          </div> -->
         </div>
-        <aside class="hero-note" aria-label="브랜드 포스트잇 메모">
-          <p class="note-head">brand memo</p>
-          <p class="note-brand">BIT HAPPENS</p>
-          <p class="note-copy">
-            "일어날 일은 반드시 일어난다"는 철학에서 시작한 이름.
-            복잡한 문제를 필연적인 결과로 연결하는 소프트웨어를 만듭니다.
-          </p>
-          <span class="note-pin" aria-hidden="true"></span>
-        </aside>
         <div class="hero-panel">
-          <h2>Business Units</h2>
+          <h2>사업 분야</h2>
           <ul>
-            <li><strong>Kiosk</strong><span>리테일/공공 인프라 운영 플랫폼</span></li>
-            <li><strong>AI</strong><span>생성형, 비전, 음성, 예측 엔진</span></li>
-            <li><strong>Airport</strong><span>스마트 여정/보안/수하물 자동화</span></li>
+            <li><strong>Kiosk</strong><span>국내외 키오스크 기반 플랫폼 인프라 사업</span></li>
+            <li><strong>AI</strong><span>AI 기반 솔루션/서비스 사업(생성형, 비전, 음성, 예측 엔진)</span></li>
+            <li><strong>Airport</strong><span>국내외 공항 연계 사업(스마트 여정/보안/수하물 자동화)</span></li>
           </ul>
+        </div>
+      </section>
+
+      <section class="container reveal insight-section" id="tech-stack">
+        <div class="section-head">
+          <h2>핵심 기술 스택</h2>
+          <p>자료 14쪽 기준 항목을 빠짐없이 반영해 기술 카테고리별로 정리했습니다.</p>
+        </div>
+        <div class="insight-grid">
+          <article class="insight-card">
+            <p class="insight-label">AI / LLM</p>
+            <h3>생성형 AI 및 모델 연동</h3>
+            <ul>
+              <li>Claude API, OpenAI GPT/DALL-E</li>
+              <li>ElevenLabs TTS, Runway AI Video</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Computer Vision</p>
+            <h3>컴퓨터 비전</h3>
+            <ul>
+              <li>ONNX Runtime, MediaPipe, YOLO</li>
+              <li>DensePose, SCRFD, ArcFace</li>
+              <li>Stable Diffusion, DiT</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Voice</p>
+            <h3>음성 처리</h3>
+            <ul>
+              <li>Moonshine Voice (온디바이스)</li>
+              <li>Whisper.Net, NAudio</li>
+              <li>실시간 FFT 스펙트럼</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Languages</p>
+            <h3>개발 언어</h3>
+            <ul>
+              <li>C# (.NET 8.0/9.0) - 주력</li>
+              <li>Python, Rust, TypeScript</li>
+              <li>Kotlin (Android)</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">UI Framework</p>
+            <h3>UI 프레임워크</h3>
+            <ul>
+              <li>WPF (데스크톱)</li>
+              <li>FastAPI (웹 백엔드)</li>
+              <li>Android (모바일)</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Infra / Tools</p>
+            <h3>인프라 및 도구</h3>
+            <ul>
+              <li>FFmpeg, MQTT, Docker</li>
+              <li>DirectML GPU 가속</li>
+              <li>JSON, SQLite, PostgreSQL</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="container reveal insight-section" id="practical-value">
+        <div class="section-head">
+          <h2>유용성 및 실용적 가치</h2>
+          <p>자료 15쪽 기준으로 현장에서 바로 체감할 수 있는 비용, 속도, 운영 측면의 가치를 추렸습니다.</p>
+        </div>
+        <div class="insight-grid">
+          <article class="insight-card">
+            <p class="insight-label">Efficiency</p>
+            <h3>비용 절감과 생산성 향상</h3>
+            <ul>
+              <li>AI 자동화로 전문 인력 비용 절감</li>
+              <li>QuickClip 기준 1분 영상 약 $0.38</li>
+              <li>하자 검증은 시간당 800~2000장 처리</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Security</p>
+            <h3>온디바이스와 실시간 분석</h3>
+            <ul>
+              <li>클라우드 의존을 줄여 개인정보 보호 강화</li>
+              <li>네트워크 독립성 확보로 현장 적용성 향상</li>
+              <li>스포츠 코칭, 얼굴 인식, 포즈 추정을 실시간 처리</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Operations</p>
+            <h3>다양한 운영 환경에 즉시 확장</h3>
+            <ul>
+              <li>Windows 데스크톱, Android, Web 지원</li>
+              <li>키오스크, POS, 워크플로우 엔진과 결합 가능</li>
+              <li>무인 운영과 현장 자동화 구조에 적합</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="container reveal insight-section" id="differentiation">
+        <div class="section-head">
+          <h2>아이디어와 차별성</h2>
+          <p>자료 16쪽 기준 항목을 빠짐없이 반영해 차별 요소를 모두 정리했습니다.</p>
+        </div>
+        <div class="insight-grid">
+          <article class="insight-card">
+            <p class="insight-label">Local AI</p>
+            <h3>온디바이스 AI 우선 설계</h3>
+            <ul>
+              <li>SmartFaceEngine, Moonshine 기반 로컬 처리</li>
+              <li>클라우드 없이 로컬에서 직접 처리</li>
+              <li>보안, 속도, 비용 모두에서 우위 확보</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Pipeline</p>
+            <h3>멀티 AI 파이프라인</h3>
+            <ul>
+              <li>여러 AI 모델을 순차 연결해 복합 결과물 생성</li>
+              <li>Claude → DALL-E → ElevenLabs → FFmpeg 순차 파이프라인</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">WiFi Sensing</p>
+            <h3>WiFi 비접촉 감지</h3>
+            <ul>
+              <li>RuView: WiFi CSI 활용 벽 너머 감지</li>
+              <li>카메라 없이 프라이버시를 보호하면서 생체 감지</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Virtual Try-On</p>
+            <h3>영상 기반 가상 피팅</h3>
+            <ul>
+              <li>이미지뿐 아니라 영상까지 가능한 Virtual Try-On</li>
+              <li>ICLR 2025 논문 채택 기술</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Domain Fit</p>
+            <h3>AI + 도메인 전문성</h3>
+            <ul>
+              <li>건설 하자 검증, 테니스 코칭 등</li>
+              <li>특정 산업에 AI를 깊이 있게 적용</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Research Agent</p>
+            <h3>자율 연구 에이전트</h3>
+            <ul>
+              <li>AI가 스스로 학습 실험을 설계하고 수행</li>
+              <li>수면 중에도 100회 실험 자동 진행</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="container reveal insight-section" id="applications">
+        <div class="section-head">
+          <h2>적용 분야</h2>
+          <p>자료 17쪽 기준 항목을 빠짐없이 반영해 실제 적용 가능한 산업군을 모두 정리했습니다.</p>
+        </div>
+        <div class="insight-grid">
+          <article class="insight-card">
+            <p class="insight-label">Retail / Commerce</p>
+            <h3>리테일 / 커머스</h3>
+            <ul>
+              <li>POS, 키오스크, 가상 피팅, 푸드트럭</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Media / Content</p>
+            <h3>미디어 / 콘텐츠</h3>
+            <ul>
+              <li>AI 영상 생성, 각본 작성, 스토리보드</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Sports / Health</p>
+            <h3>스포츠 / 헬스</h3>
+            <ul>
+              <li>테니스 스윙 분석, 생체 신호 모니터링</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Construction / Building</p>
+            <h3>건설 / 건축</h3>
+            <ul>
+              <li>하자 검출 및 AI 라벨링</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Security / Identity</p>
+            <h3>보안 / 인증</h3>
+            <ul>
+              <li>얼굴 인식, 라이브니스 감지, 비접촉 배송</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Smart Facilities</p>
+            <h3>스마트 시설</h3>
+            <ul>
+              <li>LED 디스플레이 관리, 원격 키오스크 제어</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Fashion</p>
+            <h3>패션</h3>
+            <ul>
+              <li>이미지/영상 가상 피팅 (Virtual Try-On)</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">IoT / Sensing</p>
+            <h3>IoT / 센싱</h3>
+            <ul>
+              <li>WiFi 기반 관통 감지, ESP32 연동</li>
+            </ul>
+          </article>
+          <article class="insight-card">
+            <p class="insight-label">Research / Automation</p>
+            <h3>연구 / 자동화</h3>
+            <ul>
+              <li>자율 AI 연구 에이전트, LLM 서버</li>
+            </ul>
+          </article>
         </div>
       </section>
 
       <section class="container" id="plans">
         <div class="section-head">
-          <h2>대표 도입 패키지</h2>
-          <p>필터 기반으로 카드를 빠르게 탐색하고 비교하세요.</p>
+          <h2>대표 솔루션</h2>
         </div>
 
         <div class="segment-control" role="tablist" aria-label="사업영역 필터">
@@ -141,115 +316,6 @@
         <div class="plan-grid" id="plan-grid"></div>
       </section>
 
-      <section class="container reveal" id="catalog">
-        <div class="section-head between">
-          <div>
-            <h2>솔루션 카탈로그</h2>
-            <p>문제, 산업, 기술 축으로 제품을 분류해 탐색합니다.</p>
-          </div>
-          <a href="#contact" class="text-link">전체 리스트 요청</a>
-        </div>
-
-        <div class="catalog-grid">
-          <article>
-            <h3>문제 기반</h3>
-            <p>대기시간 단축, 무인 운영, 인증 강화, 품질 검증 자동화</p>
-          </article>
-          <article>
-            <h3>산업 기반</h3>
-            <p>공항, 유통, 외식, 공공기관, 의료, 건설, 교통 인프라</p>
-          </article>
-          <article>
-            <h3>기술 기반</h3>
-            <p>Vision, Speech, LLM, Workflow, Edge AI, 시스템 통합 API</p>
-          </article>
-          <article>
-            <h3>추천 리소스</h3>
-            <p>도입 사례집, API 문서, 운영 체크리스트, 인프라 가이드</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="container reveal" id="process">
-        <div class="section-head">
-          <h2>도입 프로세스</h2>
-          <p>기획부터 안정화까지 단계별로 명확한 산출물을 제공합니다.</p>
-        </div>
-        <div class="process-grid">
-          <article>
-            <p class="process-step">Step 01</p>
-            <h3>요구사항 진단</h3>
-            <p>운영 환경, 기존 시스템, 목표 KPI를 기준으로 우선 과제를 도출합니다.</p>
-          </article>
-          <article>
-            <p class="process-step">Step 02</p>
-            <h3>파일럿 구축</h3>
-            <p>핵심 기능을 빠르게 검증할 수 있는 파일럿을 구성하고 성능을 측정합니다.</p>
-          </article>
-          <article>
-            <p class="process-step">Step 03</p>
-            <h3>확장 배포</h3>
-            <p>검증 결과를 기준으로 다지점/대규모 환경으로 단계적 확장을 진행합니다.</p>
-          </article>
-          <article>
-            <p class="process-step">Step 04</p>
-            <h3>운영 최적화</h3>
-            <p>모니터링 지표, 장애 대응, 업데이트 운영 정책을 포함한 안정화 체계를 제공합니다.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="container reveal" id="metrics">
-        <div class="section-head between">
-          <div>
-            <h2>기대 효과 지표</h2>
-            <p>패키지 도입 시 현장에서 자주 확인하는 핵심 지표입니다.</p>
-          </div>
-          <a href="#contact" class="text-link">맞춤 KPI 설계 요청</a>
-        </div>
-        <div class="metric-grid">
-          <article>
-            <h3>운영 효율</h3>
-            <p class="metric-value">+32%</p>
-            <p>업무 자동화와 동선 최적화로 처리량을 개선합니다.</p>
-          </article>
-          <article>
-            <h3>대기 시간</h3>
-            <p class="metric-value">-27%</p>
-            <p>무인 절차와 안내 고도화로 고객 대기 시간을 단축합니다.</p>
-          </article>
-          <article>
-            <h3>운영 안정성</h3>
-            <p class="metric-value">99.9%</p>
-            <p>관제 체계와 표준 운영 정책으로 시스템 가용성을 유지합니다.</p>
-          </article>
-          <article>
-            <h3>의사결정 속도</h3>
-            <p class="metric-value">+45%</p>
-            <p>실시간 리포트와 통합 대시보드로 대응 시간을 단축합니다.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="container reveal" id="faq">
-        <div class="section-head">
-          <h2>자주 묻는 질문</h2>
-        </div>
-        <div class="faq-list">
-          <details>
-            <summary>50개 이상의 제품을 어떻게 관리하나요?</summary>
-            <p>공통 메타데이터를 기준으로 제품을 태깅하여 탐색 구조를 일관되게 유지합니다.</p>
-          </details>
-          <details>
-            <summary>기존 시스템과 연동 가능한가요?</summary>
-            <p>API 중심 아키텍처를 기본으로 현장 장비 및 백오피스와 단계적으로 연동합니다.</p>
-          </details>
-          <details>
-            <summary>도입 기간은 어느 정도인가요?</summary>
-            <p>패키지별로 다르지만 파일럿은 보통 4~8주, 확장은 범위에 맞춰 커스터마이즈합니다.</p>
-          </details>
-        </div>
-      </section>
 
       <section class="contact container reveal" id="contact">
         <div>
