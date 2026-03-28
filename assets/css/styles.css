@@ -854,108 +854,19 @@ h2 {
   transform: translateY(0);
 }
 
-@media (max-width: 1100px) {
-  .mega-columns,
-  .plan-grid,
-  .insight-grid,
-  .catalog-grid,
-  .process-grid,
-  .metric-grid {
+@media (min-width: 1024px) {
+}
+
+@media (min-width: 600px) and (max-width: 1023px) {
+  .hero-panel ul,
+  .insight-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .hero {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-note {
-    max-width: 420px;
-  }
-
-  .plan-card {
-    grid-column: span 1 !important;
-  }
-
-  .plan-card.has-lead-thumb .plan-layout {
-    flex-direction: column;
-  }
-
-  .plan-card.has-lead-thumb .plan-lead-thumb {
-    height: auto;
-    max-height: none;
-  }
-
-  .plan-card.has-lead-thumb .plan-lead-thumb img {
-    height: auto;
-    width: min(100%, 460px);
-    max-width: 100%;
   }
 }
 
-@media (max-width: 780px) {
-  .menu-toggle {
-    display: block;
-  }
-
-  .nav {
-    position: fixed;
-    top: 86px;
-    right: 14px;
-    width: min(320px, calc(100vw - 28px));
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 14px;
-    box-shadow: var(--shadow-md);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-8px);
-    transition: 0.2s ease;
-  }
-
-  .header.nav-open .nav {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-  }
-
-  .nav ul {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .has-mega {
-    width: 100%;
-  }
-
-  .mega-menu {
-    position: static;
-    transform: none;
-    width: 100%;
-    margin-top: 8px;
-    display: none;
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
-
-  .has-mega.open .mega-menu {
-    display: block;
-  }
-
-  .mega-columns,
-  .plan-grid,
-  .insight-grid,
-  .catalog-grid,
-  .process-grid,
-  .metric-grid {
+@media (max-width: 599px) {
+  .hero-panel ul,
+  .insight-grid {
     grid-template-columns: 1fr;
-  }
-
-  .section-head.between,
-  .contact {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
