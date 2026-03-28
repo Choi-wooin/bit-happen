@@ -7,6 +7,7 @@ const planGrid = document.getElementById('plan-grid');
 const segments = document.querySelectorAll('.segment');
 let activeGroup = 'all';
 let mediaLibraryCache = null;
+const tabletMediaQuery = window.matchMedia('(min-width: 600px) and (max-width: 1023px)');
 
 function escapeHtml(value) {
   return String(value)
@@ -89,6 +90,60 @@ function getRepresentativeThumbByCardId(mediaItems, cardId) {
   const representative = imageItems.find((item) => item.isRepresentative === true) || null;
   const selected = representative || imageItems[0];
   return resolveMediaPath(selected.src || '');
+}
+
+function resetTabletLeadThumbStyles(thumb, img) {
+  thumb.style.maxWidth = '';
+  thumb.style.width = '';
+  thumb.style.height = '';
+  thumb.style.alignSelf = '';
+  img.style.maxWidth = '';
+  img.style.width = '';
+  img.style.height = '';
+}
+
+function adjustTabletLeadThumbs() {
+  const leadThumbs = document.querySelectorAll('.plan-card.has-lead-thumb .plan-lead-thumb');
+
+  leadThumbs.forEach((thumb) => {
+    const img = thumb.querySelector('img');
+    const card = thumb.closest('.plan-card');
+    if (!img || !card) {
+      return;
+    }
+
+    resetTabletLeadThumbStyles(thumb, img);
+
+    if (!tabletMediaQuery.matches) {
+      return;
+    }
+
+    const applyLimit = () => {
+      resetTabletLeadThumbStyles(thumb, img);
+
+      const cardWidth = card.getBoundingClientRect().width;
+      const thumbWidth = thumb.getBoundingClientRect().width;
+      const maxAllowedWidth = cardWidth * 0.5;
+
+      if (!cardWidth || thumbWidth <= maxAllowedWidth) {
+        return;
+      }
+
+      thumb.style.maxWidth = `${maxAllowedWidth}px`;
+      thumb.style.width = '100%';
+      thumb.style.height = 'auto';
+      thumb.style.alignSelf = 'center';
+      img.style.maxWidth = '100%';
+      img.style.width = '100%';
+      img.style.height = 'auto';
+    };
+
+    if (!img.complete) {
+      img.addEventListener('load', applyLimit, { once: true });
+    }
+
+    applyLimit();
+  });
 }
 
 async function renderPlanCards(group = 'all') {
@@ -185,6 +240,8 @@ async function renderPlanCards(group = 'all') {
 
     planGrid.appendChild(article);
   });
+
+  adjustTabletLeadThumbs();
 }
 
 function openMega() {
@@ -298,6 +355,10 @@ segments.forEach((segment) => {
 window.addEventListener('bitHappenCardsUpdated', () => {
   mediaLibraryCache = null;
   renderPlanCards(activeGroup);
+});
+
+window.addEventListener('resize', () => {
+  adjustTabletLeadThumbs();
 });
 
 const revealElements = document.querySelectorAll('.reveal');

@@ -864,6 +864,10 @@ h2 {
     margin-inline: auto;
   }
 
+  .hero-copy .hero-lead {
+    font-size: 105%;
+  }
+
   .plan-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -894,10 +898,40 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .plan-card,
+  .plan-card.wide,
+  .plan-card.has-lead-thumb {
+    min-height: auto;
+    height: auto;
+  }
+
+  .plan-card.has-lead-thumb .plan-content {
+    height: auto;
+  }
+
   .plan-card.span-2,
   .plan-card.span-3,
   .plan-card.span-4 {
     grid-column: span 1;
+  }
+
+  .plan-card.has-lead-thumb .plan-layout {
+    flex-direction: column;
+    height: auto;
+    max-height: none;
+  }
+
+  .plan-card.has-lead-thumb .plan-lead-thumb {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    align-self: flex-start;
+  }
+
+  .plan-card.has-lead-thumb .plan-lead-thumb img {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
   }
 
   .header-inner {
