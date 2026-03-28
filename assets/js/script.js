@@ -8,6 +8,9 @@ const segments = document.querySelectorAll('.segment');
 let activeGroup = 'all';
 let mediaLibraryCache = null;
 const tabletMediaQuery = window.matchMedia('(min-width: 600px) and (max-width: 1023px)');
+const inquiryFormUrl = 'https://tally.so/r/oboZNx';
+const inquiryEmbedUrl = 'https://tally.so/embed/oboZNx?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1';
+let inquiryModalState = null;
 
 function escapeHtml(value) {
   return String(value)
@@ -299,6 +302,93 @@ function closeNavMenu() {
   closeMega();
 }
 
+function getInquiryModalState() {
+  if (inquiryModalState) {
+    return inquiryModalState;
+  }
+
+  const modal = document.createElement('div');
+  modal.className = 'inquiry-modal';
+  modal.id = 'inquiry-modal';
+  modal.setAttribute('aria-hidden', 'true');
+  modal.innerHTML = `
+    <div class="inquiry-modal__backdrop" data-inquiry-close></div>
+    <div class="inquiry-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="inquiry-modal-title">
+      <button type="button" class="inquiry-modal__close" aria-label="문의 모달 닫기" data-inquiry-close>닫기</button>
+      <div class="inquiry-modal__note">
+        <p class="inquiry-modal__eyebrow">BIT HAPPENS</p>
+        <h2 id="inquiry-modal-title">도입 문의</h2>
+        <p>필요한 내용을 남겨주시면 검토 후 빠르게 연락드리겠습니다.</p>
+        <span class="inquiry-modal__pin" aria-hidden="true"></span>
+      </div>
+      <div class="inquiry-modal__frame-wrap">
+        <iframe
+          class="inquiry-modal__frame"
+          src="${inquiryEmbedUrl}"
+          title="BIT HAPPENS 도입 문의"
+          loading="lazy"
+          allow="clipboard-write"
+        ></iframe>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const closeModal = () => {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('inquiry-modal-open');
+  };
+
+  modal.querySelectorAll('[data-inquiry-close]').forEach((element) => {
+    element.addEventListener('click', closeModal);
+  });
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && modal.classList.contains('open')) {
+      closeModal();
+    }
+  });
+
+  inquiryModalState = {
+    modal,
+    open(trigger) {
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('inquiry-modal-open');
+      modal.querySelector('.inquiry-modal__close')?.focus();
+      this.lastTrigger = trigger || null;
+    },
+    close() {
+      closeModal();
+      this.lastTrigger?.focus?.();
+    },
+    lastTrigger: null,
+  };
+
+  modal.querySelectorAll('[data-inquiry-close]').forEach((element) => {
+    element.addEventListener('click', () => inquiryModalState.close());
+  });
+
+  return inquiryModalState;
+}
+
+function bindInquiryTriggers(scope = document) {
+  scope.querySelectorAll('[data-inquiry-trigger]').forEach((trigger) => {
+    if (trigger.dataset.inquiryBound === 'true') {
+      return;
+    }
+
+    trigger.dataset.inquiryBound = 'true';
+    trigger.addEventListener('click', (event) => {
+      event.preventDefault();
+      closeNavMenu();
+      getInquiryModalState().open(trigger);
+    });
+  });
+}
+
 document.querySelectorAll('.nav a[href^="#"]').forEach((link) => {
   link.addEventListener('click', (event) => {
     closeNavMenu();
@@ -375,4 +465,5 @@ const observer = new IntersectionObserver(
 
 revealElements.forEach((el) => observer.observe(el));
 
+bindInquiryTriggers();
 renderPlanCards('all');

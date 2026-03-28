@@ -578,7 +578,26 @@ h2 {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 5px;
+  background: #4f5965;
+}
+
+.plan-card[data-group="kiosk"] .plan-badge {
+  background: #1f8f5f;
+}
+
+.plan-card[data-group="ai"] .plan-badge {
+  background: #cf3341;
+}
+
+.plan-card[data-group="airport"] .plan-badge {
+  background: #1f66d1;
 }
 
 .plan-copy {
@@ -647,7 +666,7 @@ h2 {
   font-weight: 400;
   line-height: 1.1;
   position: absolute;
-  top: 18px;
+  bottom: 18px;
   right: 10px;
 }
 
@@ -854,6 +873,117 @@ h2 {
   transform: translateY(0);
 }
 
+body.inquiry-modal-open {
+  overflow: hidden;
+}
+
+.inquiry-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: none;
+}
+
+.inquiry-modal.open {
+  display: block;
+}
+
+.inquiry-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top left, rgba(255, 233, 136, 0.2), transparent 30%),
+    rgba(15, 19, 26, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.inquiry-modal__dialog {
+  position: relative;
+  z-index: 1;
+  width: min(1080px, calc(100vw - 40px));
+  height: min(86vh, 860px);
+  margin: min(7vh, 48px) auto;
+  background: linear-gradient(180deg, #ffffff, #f8f8fb);
+  border: 1px solid rgba(210, 216, 224, 0.9);
+  box-shadow: 0 32px 60px rgba(8, 12, 18, 0.24);
+  display: grid;
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.inquiry-modal__close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  border: 1px solid rgba(31, 31, 31, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  min-width: 72px;
+  min-height: 38px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.inquiry-modal__note {
+  position: relative;
+  padding: 80px 28px 28px;
+  background:
+    linear-gradient(155deg, #ffe98b 0%, #ffe06b 58%, #ffd84d 100%);
+  border-right: 1px solid #dbc15e;
+  color: #2d2818;
+}
+
+.inquiry-modal__eyebrow {
+  margin: 0 0 14px;
+  font-family: "Manrope", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.inquiry-modal__note h2 {
+  margin: 0;
+  font-family: "Manrope", sans-serif;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  letter-spacing: -0.03em;
+}
+
+.inquiry-modal__note p:last-of-type {
+  margin: 14px 0 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  max-width: 24ch;
+}
+
+.inquiry-modal__pin {
+  position: absolute;
+  top: 30px;
+  right: 28px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #f14a3c;
+  box-shadow: 0 0 0 6px rgba(241, 74, 60, 0.18);
+}
+
+.inquiry-modal__frame-wrap {
+  min-width: 0;
+  height: 100%;
+  background:
+    linear-gradient(180deg, rgba(20, 115, 230, 0.06), rgba(20, 115, 230, 0)),
+    #fff;
+  padding: 72px 20px 20px;
+}
+
+.inquiry-modal__frame {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #d9e0e8;
+  background: #fff;
+}
+
 @media (min-width: 1024px) {
 }
 
@@ -884,6 +1014,11 @@ h2 {
 
   .insight-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inquiry-modal__dialog {
+    width: min(980px, calc(100vw - 32px));
+    grid-template-columns: 280px minmax(0, 1fr);
   }
 }
 
@@ -1009,5 +1144,33 @@ h2 {
   .contact {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .inquiry-modal__dialog {
+    width: calc(100vw - 20px);
+    height: calc(100vh - 20px);
+    margin: 10px auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .inquiry-modal__note {
+    padding: 70px 18px 18px;
+    border-right: 0;
+    border-bottom: 1px solid #dbc15e;
+  }
+
+  .inquiry-modal__note p:last-of-type {
+    max-width: none;
+  }
+
+  .inquiry-modal__frame-wrap {
+    padding: 18px 14px 14px;
+  }
+
+  .inquiry-modal__close {
+    top: 12px;
+    right: 12px;
+    min-width: 62px;
   }
 }
