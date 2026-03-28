@@ -236,11 +236,28 @@ menuToggle.addEventListener('click', () => {
   menuToggle.setAttribute('aria-expanded', String(isOpen));
 });
 
+function closeNavMenu() {
+  header.classList.remove('nav-open');
+  menuToggle.setAttribute('aria-expanded', 'false');
+  closeMega();
+}
+
 document.querySelectorAll('.nav a[href^="#"]').forEach((link) => {
-  link.addEventListener('click', () => {
-    header.classList.remove('nav-open');
-    menuToggle.setAttribute('aria-expanded', 'false');
-    closeMega();
+  link.addEventListener('click', (event) => {
+    closeNavMenu();
+
+    if (link.dataset.group) {
+      return;
+    }
+
+    const targetId = link.getAttribute('href');
+    const targetElement = targetId ? document.querySelector(targetId) : null;
+    if (!targetElement) {
+      return;
+    }
+
+    event.preventDefault();
+    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
 
@@ -251,6 +268,8 @@ document.querySelectorAll('.nav a[data-group]').forEach((link) => {
     const targetGroup = link.dataset.group;
     const targetSegment = document.querySelector(`.segment[data-group="${targetGroup}"]`);
     const plansSection = document.getElementById('plans');
+
+    closeNavMenu();
 
     if (targetSegment) {
       targetSegment.click();
