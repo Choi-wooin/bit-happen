@@ -40,12 +40,28 @@
 
         <nav class="nav" aria-label="주요 탐색">
           <ul>
-            <li><a href="#plans" data-group="all">전체</a></li>
-            <li><a href="#plans" data-group="kiosk">Kiosk</a></li>
-            <li><a href="#plans" data-group="ai">AI</a></li>
-            <li><a href="#plans" data-group="airport">Airport</a></li>
-            <li><a href="#plans" data-group="device-interface">Device interface</a></li>
-            <li><a href="#plans" data-group="product">Product</a></li>
+            <li class="has-mega" id="mega-host">
+              <button
+                type="button"
+                class="nav-button"
+                id="mega-trigger"
+                aria-expanded="false"
+                aria-haspopup="true"
+                aria-controls="business-submenu"
+              >
+                사업분야
+              </button>
+              <div class="mega-menu" id="business-submenu" role="menu" aria-label="사업분야 하위메뉴">
+                <ul class="submenu-list">
+                  <li><a href="#plans" data-group="all" role="menuitem">전체</a></li>
+                  <li><a href="#plans" data-group="kiosk" role="menuitem">Kiosk</a></li>
+                  <li><a href="#plans" data-group="ai" role="menuitem">AI</a></li>
+                  <li><a href="#plans" data-group="airport" role="menuitem">Airport</a></li>
+                  <li><a href="#plans" data-group="device-interface" role="menuitem">Device interface</a></li>
+                  <li><a href="#plans" data-group="product" role="menuitem">Product</a></li>
+                </ul>
+              </div>
+            </li>
             <li><a class="cta-mini" href="#contact">Contact</a></li>
           </ul>
         </nav>

@@ -292,13 +292,13 @@ if (megaHost && megaTrigger) {
   });
 
   megaHost.addEventListener('mouseenter', () => {
-    if (window.matchMedia('(min-width: 781px)').matches) {
+    if (window.matchMedia('(min-width: 600px)').matches) {
       openMega();
     }
   });
 
   megaHost.addEventListener('mouseleave', () => {
-    if (window.matchMedia('(min-width: 781px)').matches) {
+    if (window.matchMedia('(min-width: 600px)').matches) {
       closeMega();
     }
   });
@@ -307,6 +307,14 @@ if (megaHost && megaTrigger) {
 menuToggle.addEventListener('click', () => {
   const isOpen = header.classList.toggle('nav-open');
   menuToggle.setAttribute('aria-expanded', String(isOpen));
+
+  if (window.matchMedia('(max-width: 599px)').matches) {
+    if (isOpen) {
+      openMega();
+    } else {
+      closeMega();
+    }
+  }
 });
 
 function closeNavMenu() {
