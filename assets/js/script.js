@@ -91,8 +91,8 @@ function getRepresentativeThumbByCardId(mediaItems, cardId) {
   if (!imageItems.length) return '';
 
   const representative = imageItems.find((item) => item.isRepresentative === true) || null;
-  const selected = representative || imageItems[0];
-  return resolveMediaPath(selected.src || '');
+  if (!representative) return '';
+  return resolveMediaPath(representative.src || '');
 }
 
 function resetTabletLeadThumbStyles(thumb, img) {
