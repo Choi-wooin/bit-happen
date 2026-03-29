@@ -600,6 +600,11 @@ h2 {
   background: #1f66d1;
 }
 
+.plan-card[data-group="device-interface"] .plan-badge {
+  background: #ffd84d;
+  color: #111;
+}
+
 .plan-copy {
   color: var(--muted);
   margin: 0;

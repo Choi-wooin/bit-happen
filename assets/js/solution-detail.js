@@ -15,6 +15,18 @@ function mediaTypeLabel(type) {
   return type === 'video' ? 'VIDEO' : 'IMAGE';
 }
 
+const GROUP_LABELS = {
+  kiosk: 'Kiosk',
+  ai: 'AI',
+  airport: 'Airport',
+  'device-interface': 'Device interface',
+  all: 'All/Enterprise',
+};
+
+function getGroupLabel(group) {
+  return GROUP_LABELS[group] || String(group || '').trim() || 'Solution';
+}
+
 function resolveMediaPath(src) {
   const value = String(src || '').trim();
   if (!value) return '';
@@ -417,6 +429,12 @@ const detailTextByGroup = {
     scenarios: ['체크인/탑승 간소화', '환승 프로세스 최적화', '수하물 위탁 자동화'],
     integration: ['게이트 장비', '인증 단말', 'BHS', '운영 관제 시스템'],
   },
+  'device-interface': {
+    pains: ['현장 디바이스 조작 복잡도 증가', '단말별 UX 일관성 부족', '임베디드 제어 연동 부담'],
+    how: ['디바이스 중심 화면 설계', '하드웨어 입력/출력 인터페이스 표준화', '온디바이스 제어 로직 최적화'],
+    scenarios: ['산업용 제어 패널', '현장 운영 단말', '임베디드 터치 인터페이스'],
+    integration: ['센서/컨트롤러', '시리얼 통신', '로컬 런타임', '장비 상태 모니터링'],
+  },
   all: {
     pains: ['제품군 확장 시 운영 복잡도 증가', '시스템 간 연동 단절', '운영 기준 불일치'],
     how: ['표준 데이터/권한 모델', '공통 운영 정책', '단계별 확장 로드맵'],
@@ -527,7 +545,7 @@ async function render() {
         <p><strong>적용 산업:</strong> ${esc(card.industry || '-')}</p>
         <p><strong>구축 기간:</strong> ${esc(card.period || '-')}</p>
         <p><strong>연동 범위:</strong> ${esc(card.integration || '-')}</p>
-        <p><strong>사업 영역:</strong> ${esc((card.group || '').toUpperCase())}</p>
+        <p><strong>사업 영역:</strong> ${esc(getGroupLabel(card.group))}</p>
       </aside>
     </section>
 

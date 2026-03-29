@@ -27,6 +27,36 @@ const fields = {
   enabled: document.getElementById('enabled'),
 };
 
+const GROUP_LABELS = {
+  kiosk: 'Kiosk',
+  ai: 'AI',
+  airport: 'Airport',
+  'device-interface': 'Device interface',
+  all: 'All/Enterprise',
+};
+
+const GROUP_DEFAULT_BADGES = {
+  kiosk: 'Kiosk',
+  ai: 'AI',
+  airport: 'Airport',
+  'device-interface': 'DEVICE INTERFACE',
+  all: 'Enterprise',
+};
+
+function getGroupLabel(group) {
+  return GROUP_LABELS[group] || String(group || '').trim() || 'Unknown';
+}
+
+function syncBadgeWithGroup(force = false) {
+  const nextBadge = GROUP_DEFAULT_BADGES[fields.group.value] || 'Package';
+  const currentBadge = fields.badge.value.trim();
+  const knownBadges = new Set(Object.values(GROUP_DEFAULT_BADGES));
+
+  if (force || !currentBadge || knownBadges.has(currentBadge)) {
+    fields.badge.value = nextBadge;
+  }
+}
+
 function getCards() {
   return window.BitHappenCardStore.getCards();
 }
@@ -71,7 +101,7 @@ async function copyText(text) {
 function clearForm() {
   fields.id.value = '';
   fields.group.value = 'kiosk';
-  fields.badge.value = 'Kiosk';
+  syncBadgeWithGroup(true);
   fields.title.value = '';
   fields.copy.value = '';
   fields.features.value = '';
@@ -163,7 +193,7 @@ function renderList() {
         <h3>${card.title}</h3>
         <strong>P${card.priority}</strong>
       </div>
-      <p class="item-meta">${card.group.toUpperCase()} | ${card.badge} | ${card.span}칸 | ${card.enabled === false ? '비노출' : '노출'}</p>
+      <p class="item-meta">${getGroupLabel(card.group)} | ${card.badge} | ${card.span}칸 | ${card.enabled === false ? '비노출' : '노출'}</p>
       <div class="item-actions">
         <button type="button" data-action="edit">편집</button>
         <button type="button" data-action="up">우선순위 +</button>
@@ -224,6 +254,10 @@ form.addEventListener('submit', async (event) => {
 
   await persistCards(next);
   clearForm();
+});
+
+fields.group.addEventListener('change', () => {
+  syncBadgeWithGroup();
 });
 
 createNewButton.addEventListener('click', () => clearForm());

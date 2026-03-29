@@ -29,6 +29,18 @@ const MAX_VIDEO_UPLOAD_BYTES = 10 * 1024 * 1024;
 let selectedPreviewUrls = [];
 let libraryCache = [];
 
+const GROUP_LABELS = {
+  kiosk: 'Kiosk',
+  ai: 'AI',
+  airport: 'Airport',
+  'device-interface': 'Device interface',
+  all: 'All/Enterprise',
+};
+
+function getGroupLabel(group) {
+  return GROUP_LABELS[group] || String(group || '').trim() || 'Unknown';
+}
+
 function esc(value) {
   return String(value)
     .replaceAll('&', '&amp;')
@@ -387,7 +399,7 @@ function renderSelectedPreview(files) {
 function makeCardOptions() {
   const cards = getCards();
   const options = cards
-    .map((card) => `<option value="${card.id}">${card.title} (${String(card.group || '').toUpperCase()})</option>`)
+    .map((card) => `<option value="${card.id}">${card.title} (${getGroupLabel(card.group)})</option>`)
     .join('');
 
   cardSelect.innerHTML = options;

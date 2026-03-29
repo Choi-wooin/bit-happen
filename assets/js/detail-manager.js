@@ -18,6 +18,18 @@ const message = document.getElementById('detail-message');
 const DETAIL_STATE_KEY_DEFAULT = 'detailOverrides';
 let overrideState = {};
 
+const GROUP_LABELS = {
+  kiosk: 'Kiosk',
+  ai: 'AI',
+  airport: 'Airport',
+  'device-interface': 'Device interface',
+  all: 'All/Enterprise',
+};
+
+function getGroupLabel(group) {
+  return GROUP_LABELS[group] || String(group || '').trim() || 'Unknown';
+}
+
 function getSupabaseConfig() {
   const cfg = window.BitHappenSupabaseConfig || {};
   const url = String(cfg.url || '').trim().replace(/\/$/, '');
@@ -51,7 +63,7 @@ function setMessage(text, isError = true) {
 function buildCardOptions() {
   const cards = window.BitHappenCardStore.getCards().filter((card) => card.enabled !== false);
   cardSelect.innerHTML = cards
-    .map((card) => `<option value="${card.id}">${card.title} (${String(card.group || '').toUpperCase()})</option>`)
+    .map((card) => `<option value="${card.id}">${card.title} (${getGroupLabel(card.group)})</option>`)
     .join('');
 }
 
