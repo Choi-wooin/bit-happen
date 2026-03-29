@@ -3,6 +3,7 @@ const menuToggle = document.querySelector('.menu-toggle');
 const megaHost = document.getElementById('mega-host');
 const megaTrigger = document.getElementById('mega-trigger');
 const planGrid = document.getElementById('plan-grid');
+const viewportDebug = document.getElementById('viewport-debug');
 
 const segments = document.querySelectorAll('.segment');
 let activeGroup = 'all';
@@ -11,6 +12,18 @@ const tabletMediaQuery = window.matchMedia('(min-width: 600px) and (max-width: 1
 const inquiryFormUrl = 'https://tally.so/r/oboZNx';
 const inquiryEmbedUrl = 'https://tally.so/embed/oboZNx?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1';
 let inquiryModalState = null;
+
+function getViewportBreakpointLabel(width) {
+  if (width <= 599) return 'Phone <= 599px';
+  if (width <= 1023) return 'Tablet 600-1023px';
+  return 'PC >= 1024px';
+}
+
+function updateViewportDebug() {
+  if (!viewportDebug) return;
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  viewportDebug.textContent = `Viewport ${viewportWidth}px | ${getViewportBreakpointLabel(viewportWidth)}`;
+}
 
 function escapeHtml(value) {
   return String(value)
@@ -448,6 +461,7 @@ window.addEventListener('bitHappenCardsUpdated', () => {
 });
 
 window.addEventListener('resize', () => {
+  updateViewportDebug();
   adjustTabletLeadThumbs();
 });
 
@@ -466,4 +480,5 @@ const observer = new IntersectionObserver(
 revealElements.forEach((el) => observer.observe(el));
 
 bindInquiryTriggers();
+updateViewportDebug();
 renderPlanCards('all');

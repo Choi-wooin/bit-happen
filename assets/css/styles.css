@@ -45,10 +45,21 @@ a {
   min-height: 44px;
   padding: 10px 16px;
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   align-items: center;
   justify-content: center;
   font-size: 0.9rem;
+}
+
+.viewport-debug {
+  flex: 0 0 100%;
+  margin: 0;
+  color: #ffe06b;
+  font-size: 0.7rem;
+  font-weight: 100;
+  line-height: 0.5;
+  text-align: center;
 }
 
 .top-banner a {
@@ -442,7 +453,11 @@ h2 {
 }
 
 .segment-control {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  justify-content: flex-start;
+  box-sizing: border-box;
   padding: 5px;
   border-radius: 0;
   border: 1px solid var(--line);
@@ -1040,6 +1055,30 @@ body.inquiry-modal-open {
     margin-inline: auto;
   }
 
+  .segment-control {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .segment-control::-webkit-scrollbar {
+    display: none;
+  }
+
+  .segment {
+    border: 0;
+    flex: 0 0 auto;
+    padding: 5px 8px;
+    min-width: 0;
+    white-space: nowrap;
+    font-size: 0.76rem;
+  }
+
   .plan-grid {
     grid-template-columns: 1fr;
   }
@@ -1069,10 +1108,10 @@ body.inquiry-modal-open {
 
   .plan-card.has-lead-thumb .plan-lead-thumb {
     width: 100%;
-    max-width: 50%;
+    max-width: 100%;
     height: auto;
     max-height: none;
-    align-self: flex-start;
+    align-self: stretch;
   }
 
   .plan-card.has-lead-thumb .plan-lead-thumb img {
