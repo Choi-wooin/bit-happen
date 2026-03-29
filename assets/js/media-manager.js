@@ -34,6 +34,7 @@ const GROUP_LABELS = {
   ai: 'AI',
   airport: 'Airport',
   'device-interface': 'Device interface',
+  product: 'Product',
   all: 'All/Enterprise',
 };
 

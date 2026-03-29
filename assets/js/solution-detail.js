@@ -20,6 +20,7 @@ const GROUP_LABELS = {
   ai: 'AI',
   airport: 'Airport',
   'device-interface': 'Device interface',
+  product: 'Product',
   all: 'All/Enterprise',
 };
 
@@ -434,6 +435,12 @@ const detailTextByGroup = {
     how: ['디바이스 중심 화면 설계', '하드웨어 입력/출력 인터페이스 표준화', '온디바이스 제어 로직 최적화'],
     scenarios: ['산업용 제어 패널', '현장 운영 단말', '임베디드 터치 인터페이스'],
     integration: ['센서/컨트롤러', '시리얼 통신', '로컬 런타임', '장비 상태 모니터링'],
+  },
+  product: {
+    pains: ['반복 구축 비용 증가', '고객사별 기능 편차 확대', '운영 체계 표준화 부족'],
+    how: ['공통 기능 모듈화', '제품 중심 릴리스 관리', '운영 데이터 기반 개선 사이클 구축'],
+    scenarios: ['SaaS 제품 운영', 'B2B 솔루션 패키지', '화이트라벨 제품 확장'],
+    integration: ['구독/결제', '운영 어드민', '로그/모니터링', '고객 지원 시스템'],
   },
   all: {
     pains: ['제품군 확장 시 운영 복잡도 증가', '시스템 간 연동 단절', '운영 기준 불일치'],

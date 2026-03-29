@@ -32,6 +32,7 @@ const GROUP_LABELS = {
   ai: 'AI',
   airport: 'Airport',
   'device-interface': 'Device interface',
+  product: 'Product',
   all: 'All/Enterprise',
 };
 
@@ -40,6 +41,7 @@ const GROUP_DEFAULT_BADGES = {
   ai: 'AI',
   airport: 'Airport',
   'device-interface': 'DEVICE INTERFACE',
+  product: 'PRODUCT',
   all: 'Enterprise',
 };
 

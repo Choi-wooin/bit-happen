@@ -605,6 +605,11 @@ h2 {
   color: #111;
 }
 
+.plan-card[data-group="product"] .plan-badge {
+  background: #f28c28;
+  color: #fff;
+}
+
 .plan-copy {
   color: var(--muted);
   margin: 0;
