@@ -402,24 +402,44 @@ function attachMediaInteractions(mediaItems) {
   modal.innerHTML = `
     <div class="media-modal-inner">
       <div class="media-modal-top">
-        <strong id="media-modal-title"></strong>
-        <button type="button" class="media-modal-close" id="media-modal-close">닫기</button>
+        <div class="media-modal-heading">
+          <strong id="media-modal-title"></strong>
+          <span class="media-modal-counter" id="media-modal-counter"></span>
+        </div>
+        <div class="media-modal-actions">
+          <p class="media-modal-hint">PC는 좌우 버튼, Tablet/Phone은 스와이프로 이동</p>
+          <button type="button" class="media-modal-close" id="media-modal-close">닫기</button>
+        </div>
       </div>
-      <div class="media-modal-body" id="media-modal-body"></div>
+      <div class="media-modal-stage">
+        <button type="button" class="media-modal-nav media-modal-nav-prev" id="media-modal-prev" aria-label="이전 미디어">이전</button>
+        <div class="media-modal-body" id="media-modal-body"></div>
+        <button type="button" class="media-modal-nav media-modal-nav-next" id="media-modal-next" aria-label="다음 미디어">다음</button>
+      </div>
     </div>
   `;
   document.body.appendChild(modal);
 
   const modalTitle = modal.querySelector('#media-modal-title');
+  const modalCounter = modal.querySelector('#media-modal-counter');
   const modalBody = modal.querySelector('#media-modal-body');
   const modalClose = modal.querySelector('#media-modal-close');
+  const modalPrev = modal.querySelector('#media-modal-prev');
+  const modalNext = modal.querySelector('#media-modal-next');
+  let currentIndex = -1;
+  let touchStartX = 0;
+  let touchDeltaX = 0;
 
-  const openModal = (index) => {
+  const canNavigate = mediaItems.length > 1;
+
+  const renderModalMedia = (index) => {
     const media = mediaItems[index];
     if (!media) return;
 
-    modal.classList.add('open');
+    currentIndex = index;
     modalTitle.textContent = media.title || `${mediaTypeLabel(media.type)} ${index + 1}`;
+    modalCounter.textContent = `${index + 1} / ${mediaItems.length}`;
+
     if (media.type === 'video') {
       modalBody.innerHTML = `<video controls autoplay playsinline ${
         media.poster ? `poster="${esc(media.poster)}"` : ''
@@ -427,11 +447,28 @@ function attachMediaInteractions(mediaItems) {
     } else {
       modalBody.innerHTML = `<img src="${esc(media.src)}" alt="${esc(media.title || `media-${index + 1}`)}" />`;
     }
+
+    modalPrev.disabled = !canNavigate;
+    modalNext.disabled = !canNavigate;
+  };
+
+  const moveModal = (direction) => {
+    if (!canNavigate || currentIndex < 0) return;
+    const nextIndex = (currentIndex + direction + mediaItems.length) % mediaItems.length;
+    renderModalMedia(nextIndex);
+  };
+
+  const openModal = (index) => {
+    modal.classList.add('open');
+    document.body.classList.add('media-modal-open');
+    renderModalMedia(index);
   };
 
   const closeModal = () => {
     modal.classList.remove('open');
+    document.body.classList.remove('media-modal-open');
     modalBody.innerHTML = '';
+    currentIndex = -1;
   };
 
   frames.forEach((frame) => {
@@ -442,11 +479,39 @@ function attachMediaInteractions(mediaItems) {
   });
 
   modalClose.addEventListener('click', closeModal);
+  modalPrev.addEventListener('click', (event) => {
+    event.stopPropagation();
+    moveModal(-1);
+  });
+  modalNext.addEventListener('click', (event) => {
+    event.stopPropagation();
+    moveModal(1);
+  });
   modal.addEventListener('click', (event) => {
     if (event.target === modal) closeModal();
   });
+  modalBody.addEventListener('touchstart', (event) => {
+    if (!modal.classList.contains('open')) return;
+    touchStartX = event.changedTouches[0]?.clientX || 0;
+    touchDeltaX = 0;
+  }, { passive: true });
+  modalBody.addEventListener('touchmove', (event) => {
+    if (!modal.classList.contains('open')) return;
+    const currentX = event.changedTouches[0]?.clientX || 0;
+    touchDeltaX = currentX - touchStartX;
+  }, { passive: true });
+  modalBody.addEventListener('touchend', () => {
+    if (!modal.classList.contains('open') || !canNavigate) return;
+    if (Math.abs(touchDeltaX) < 50) return;
+    moveModal(touchDeltaX < 0 ? 1 : -1);
+    touchStartX = 0;
+    touchDeltaX = 0;
+  });
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') closeModal();
+    if (!modal.classList.contains('open')) return;
+    if (event.key === 'ArrowLeft') moveModal(-1);
+    if (event.key === 'ArrowRight') moveModal(1);
   });
 }
 

@@ -10,14 +10,13 @@
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Manrope:wght@700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
     <link rel="stylesheet" href="../assets/css/detail-manager.css" />
   </head>
   <body>
     <main class="detail-layout">
       <section class="panel form-panel">
         <h1>상세페이지 관리</h1>
-        <p class="hint">카드별 상세페이지 본문을 3개 섹션으로 입력합니다. 에디터에서 작성하고 필요하면 HTML 소스로 직접 수정할 수 있습니다.</p>
+        <p class="hint">카드별 상세페이지 본문을 3개 섹션으로 입력합니다. 에디터에서 작성하고 필요하면 HTML 소스로 직접 수정할 수 있습니다. 이미지와 동영상 크기는 HTML에서 <strong>--detail-media-height-pc</strong> 값만 수정하면 되고, Tablet/Phone은 그 값을 비율로 따라갑니다.</p>
 
         <form id="detail-form">
           <label>대상 카드
@@ -33,18 +32,26 @@
                 </div>
                 <div class="editor-tools">
                   <button type="button" data-editor-action="insert-image" data-section="intentHtml">이미지 HTML</button>
+                  <button type="button" data-editor-action="upload-video" data-section="intentHtml">동영상 업로드</button>
                   <button type="button" data-editor-action="insert-video" data-section="intentHtml">동영상 HTML</button>
+                  <button type="button" data-editor-action="sync-selection" data-section="intentHtml">선택완료</button>
+                  <button type="button" data-editor-action="media-size" data-media-size="280" data-section="intentHtml">작게</button>
+                  <button type="button" data-editor-action="media-size" data-media-size="360" data-section="intentHtml">보통</button>
+                  <button type="button" data-editor-action="media-size" data-media-size="520" data-section="intentHtml">크게</button>
+                  <button type="button" data-editor-action="media-size-custom" data-section="intentHtml">직접입력</button>
                   <button type="button" data-editor-action="insert-table" data-section="intentHtml">표 HTML</button>
                   <button type="button" data-editor-action="toggle-source" data-section="intentHtml">HTML 소스</button>
                 </div>
               </div>
-              <div id="editor-intent" class="editor-host"></div>
-              <div class="source-panel" data-section="intentHtml" hidden>
-                <label>HTML 소스
-                  <textarea id="detail-intent-html" rows="10" placeholder="<p>HTML을 직접 입력할 수 있습니다.</p>"></textarea>
-                </label>
-                <div class="source-actions">
-                  <button type="button" data-editor-action="apply-source" data-section="intentHtml">HTML 반영</button>
+              <div class="editor-workspace">
+                <div id="editor-intent" class="editor-host"></div>
+                <div class="source-panel" data-section="intentHtml">
+                  <label>HTML 소스
+                    <textarea id="detail-intent-html" rows="10" placeholder="<p>HTML을 직접 입력할 수 있습니다.</p>"></textarea>
+                  </label>
+                  <div class="source-actions">
+                    <button type="button" data-editor-action="apply-source" data-section="intentHtml">HTML 반영</button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -57,18 +64,26 @@
                 </div>
                 <div class="editor-tools">
                   <button type="button" data-editor-action="insert-image" data-section="architectureHtml">이미지 HTML</button>
+                  <button type="button" data-editor-action="upload-video" data-section="architectureHtml">동영상 업로드</button>
                   <button type="button" data-editor-action="insert-video" data-section="architectureHtml">동영상 HTML</button>
+                  <button type="button" data-editor-action="sync-selection" data-section="architectureHtml">선택완료</button>
+                  <button type="button" data-editor-action="media-size" data-media-size="280" data-section="architectureHtml">작게</button>
+                  <button type="button" data-editor-action="media-size" data-media-size="360" data-section="architectureHtml">보통</button>
+                  <button type="button" data-editor-action="media-size" data-media-size="520" data-section="architectureHtml">크게</button>
+                  <button type="button" data-editor-action="media-size-custom" data-section="architectureHtml">직접입력</button>
                   <button type="button" data-editor-action="insert-table" data-section="architectureHtml">표 HTML</button>
                   <button type="button" data-editor-action="toggle-source" data-section="architectureHtml">HTML 소스</button>
                 </div>
               </div>
-              <div id="editor-architecture" class="editor-host"></div>
-              <div class="source-panel" data-section="architectureHtml" hidden>
-                <label>HTML 소스
-                  <textarea id="detail-architecture-html" rows="10" placeholder="<section><h3>시스템 구성</h3>...</section>"></textarea>
-                </label>
-                <div class="source-actions">
-                  <button type="button" data-editor-action="apply-source" data-section="architectureHtml">HTML 반영</button>
+              <div class="editor-workspace">
+                <div id="editor-architecture" class="editor-host"></div>
+                <div class="source-panel" data-section="architectureHtml">
+                  <label>HTML 소스
+                    <textarea id="detail-architecture-html" rows="10" placeholder="<section><h3>시스템 구성</h3>...</section>"></textarea>
+                  </label>
+                  <div class="source-actions">
+                    <button type="button" data-editor-action="apply-source" data-section="architectureHtml">HTML 반영</button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -81,27 +96,37 @@
                 </div>
                 <div class="editor-tools">
                   <button type="button" data-editor-action="insert-image" data-section="referenceHtml">이미지 HTML</button>
+                  <button type="button" data-editor-action="upload-video" data-section="referenceHtml">동영상 업로드</button>
                   <button type="button" data-editor-action="insert-video" data-section="referenceHtml">동영상 HTML</button>
+                  <button type="button" data-editor-action="sync-selection" data-section="referenceHtml">선택완료</button>
+                  <button type="button" data-editor-action="media-size" data-media-size="280" data-section="referenceHtml">작게</button>
+                  <button type="button" data-editor-action="media-size" data-media-size="360" data-section="referenceHtml">보통</button>
+                  <button type="button" data-editor-action="media-size" data-media-size="520" data-section="referenceHtml">크게</button>
+                  <button type="button" data-editor-action="media-size-custom" data-section="referenceHtml">직접입력</button>
                   <button type="button" data-editor-action="insert-table" data-section="referenceHtml">표 HTML</button>
                   <button type="button" data-editor-action="toggle-source" data-section="referenceHtml">HTML 소스</button>
                 </div>
               </div>
-              <div id="editor-reference" class="editor-host"></div>
-              <div class="source-panel" data-section="referenceHtml" hidden>
-                <label>HTML 소스
-                  <textarea id="detail-reference-html" rows="10" placeholder="<ul><li>관련 자료 링크</li></ul>"></textarea>
-                </label>
-                <div class="source-actions">
-                  <button type="button" data-editor-action="apply-source" data-section="referenceHtml">HTML 반영</button>
+              <div class="editor-workspace">
+                <div id="editor-reference" class="editor-host"></div>
+                <div class="source-panel" data-section="referenceHtml">
+                  <label>HTML 소스
+                    <textarea id="detail-reference-html" rows="10" placeholder="<ul><li>관련 자료 링크</li></ul>"></textarea>
+                  </label>
+                  <div class="source-actions">
+                    <button type="button" data-editor-action="apply-source" data-section="referenceHtml">HTML 반영</button>
+                  </div>
                 </div>
               </div>
             </section>
           </div>
 
-          <p class="hint">이미지/동영상은 먼저 미디어 관리자에서 assets/media에 업로드한 뒤 경로를 붙여넣는 방식을 권장합니다.</p>
+          <p class="hint">이미지는 jpg, jpeg, png, gif, webp, bmp, svg 형식으로 최대 10MB까지, 동영상은 mp4, webm, avi, mov, mkv 형식으로 최대 100MB까지 media.bithappen.kr로 업로드됩니다.</p>
+
+          <input id="detail-video-upload" type="file" accept=".mp4,.webm,.avi,.mov,.mkv" hidden />
 
           <div class="actions">
-            <button type="submit">상세 내용 저장</button>
+            <button type="button" id="detail-save">상세 내용 저장</button>
             <button type="button" id="detail-clear">현재 카드 입력값 비우기</button>
           </div>
         </form>
@@ -110,7 +135,7 @@
       </section>
     </main>
 
-    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
     <script src="../assets/js/app-version.js"></script>
     <script src="../assets/js/asset-loader.js"></script>
     <script>
