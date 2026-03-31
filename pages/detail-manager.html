@@ -10,54 +10,95 @@
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Manrope:wght@700;800&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
     <link rel="stylesheet" href="../assets/css/detail-manager.css" />
   </head>
   <body>
     <main class="detail-layout">
       <section class="panel form-panel">
         <h1>상세페이지 관리</h1>
-        <p class="hint">카드별 상세페이지 텍스트를 입력/수정합니다. 비워두면 기본값이 사용됩니다.</p>
+        <p class="hint">카드별 상세페이지 본문을 3개 섹션으로 입력합니다. 에디터에서 작성하고 필요하면 HTML 소스로 직접 수정할 수 있습니다.</p>
 
         <form id="detail-form">
           <label>대상 카드
             <select id="detail-card-id" required></select>
           </label>
 
-          <label>문제 정의 (줄바꿈 구분)
-            <textarea id="detail-pains" rows="4" placeholder="예: 문제 1\n문제 2"></textarea>
-          </label>
+          <div class="editor-stack">
+            <section class="editor-panel" data-section="intentHtml">
+              <div class="editor-panel-head">
+                <div>
+                  <h2>개발의도 / 필요성 / 개념</h2>
+                  <p class="hint">서비스가 왜 필요한지, 무엇을 해결하는지, 어떤 개념인지 설명합니다.</p>
+                </div>
+                <div class="editor-tools">
+                  <button type="button" data-editor-action="insert-image" data-section="intentHtml">이미지 HTML</button>
+                  <button type="button" data-editor-action="insert-video" data-section="intentHtml">동영상 HTML</button>
+                  <button type="button" data-editor-action="insert-table" data-section="intentHtml">표 HTML</button>
+                  <button type="button" data-editor-action="toggle-source" data-section="intentHtml">HTML 소스</button>
+                </div>
+              </div>
+              <div id="editor-intent" class="editor-host"></div>
+              <div class="source-panel" data-section="intentHtml" hidden>
+                <label>HTML 소스
+                  <textarea id="detail-intent-html" rows="10" placeholder="<p>HTML을 직접 입력할 수 있습니다.</p>"></textarea>
+                </label>
+                <div class="source-actions">
+                  <button type="button" data-editor-action="apply-source" data-section="intentHtml">HTML 반영</button>
+                </div>
+              </div>
+            </section>
 
-          <label>해결 방식 (줄바꿈 구분)
-            <textarea id="detail-how" rows="4" placeholder="예: 방식 1\n방식 2"></textarea>
-          </label>
+            <section class="editor-panel" data-section="architectureHtml">
+              <div class="editor-panel-head">
+                <div>
+                  <h2>아키텍처 / 시스템구성 / 동작원리</h2>
+                  <p class="hint">구성요소, 데이터 흐름, 처리 방식, 기술 스택을 중심으로 설명합니다.</p>
+                </div>
+                <div class="editor-tools">
+                  <button type="button" data-editor-action="insert-image" data-section="architectureHtml">이미지 HTML</button>
+                  <button type="button" data-editor-action="insert-video" data-section="architectureHtml">동영상 HTML</button>
+                  <button type="button" data-editor-action="insert-table" data-section="architectureHtml">표 HTML</button>
+                  <button type="button" data-editor-action="toggle-source" data-section="architectureHtml">HTML 소스</button>
+                </div>
+              </div>
+              <div id="editor-architecture" class="editor-host"></div>
+              <div class="source-panel" data-section="architectureHtml" hidden>
+                <label>HTML 소스
+                  <textarea id="detail-architecture-html" rows="10" placeholder="<section><h3>시스템 구성</h3>...</section>"></textarea>
+                </label>
+                <div class="source-actions">
+                  <button type="button" data-editor-action="apply-source" data-section="architectureHtml">HTML 반영</button>
+                </div>
+              </div>
+            </section>
 
-          <label>핵심 기능 (줄바꿈 구분)
-            <textarea id="detail-features" rows="5" placeholder="예: 기능 1\n기능 2"></textarea>
-          </label>
+            <section class="editor-panel" data-section="referenceHtml">
+              <div class="editor-panel-head">
+                <div>
+                  <h2>레퍼런스 / 관련자료</h2>
+                  <p class="hint">참고 이미지, 도식, 링크, 표, 비교자료, 데모 영상 등을 정리합니다.</p>
+                </div>
+                <div class="editor-tools">
+                  <button type="button" data-editor-action="insert-image" data-section="referenceHtml">이미지 HTML</button>
+                  <button type="button" data-editor-action="insert-video" data-section="referenceHtml">동영상 HTML</button>
+                  <button type="button" data-editor-action="insert-table" data-section="referenceHtml">표 HTML</button>
+                  <button type="button" data-editor-action="toggle-source" data-section="referenceHtml">HTML 소스</button>
+                </div>
+              </div>
+              <div id="editor-reference" class="editor-host"></div>
+              <div class="source-panel" data-section="referenceHtml" hidden>
+                <label>HTML 소스
+                  <textarea id="detail-reference-html" rows="10" placeholder="<ul><li>관련 자료 링크</li></ul>"></textarea>
+                </label>
+                <div class="source-actions">
+                  <button type="button" data-editor-action="apply-source" data-section="referenceHtml">HTML 반영</button>
+                </div>
+              </div>
+            </section>
+          </div>
 
-          <label>적용 시나리오 (줄바꿈 구분)
-            <textarea id="detail-scenarios" rows="4" placeholder="예: 시나리오 1\n시나리오 2"></textarea>
-          </label>
-
-          <label>기술 연동 (줄바꿈 구분)
-            <textarea id="detail-integration" rows="4" placeholder="예: API 1\nAPI 2"></textarea>
-          </label>
-
-          <label>기술 스펙 (JSON 배열, 선택)
-            <textarea
-              id="detail-tech-specs"
-              rows="6"
-              placeholder='[ { "title": "Backend", "items": ["FastAPI", "WebSocket"] } ]'
-            ></textarea>
-          </label>
-
-          <label>KPI (JSON 배열, 선택)
-            <textarea
-              id="detail-kpis"
-              rows="5"
-              placeholder='[ { "value": "+20%", "title": "효율", "desc": "설명" } ]'
-            ></textarea>
-          </label>
+          <p class="hint">이미지/동영상은 먼저 미디어 관리자에서 assets/media에 업로드한 뒤 경로를 붙여넣는 방식을 권장합니다.</p>
 
           <div class="actions">
             <button type="submit">상세 내용 저장</button>
@@ -69,6 +110,7 @@
       </section>
     </main>
 
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
     <script src="../assets/js/app-version.js"></script>
     <script src="../assets/js/asset-loader.js"></script>
     <script>

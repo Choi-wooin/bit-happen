@@ -38,7 +38,7 @@ h1 {
 
 form {
   display: grid;
-  gap: 10px;
+  gap: 14px;
 }
 
 label {
@@ -61,9 +61,86 @@ textarea {
   padding: 9px 10px;
 }
 
+.editor-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.editor-panel {
+  border: 1px solid var(--line);
+  background: #fbfdff;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.editor-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.editor-panel h2 {
+  margin: 0 0 4px;
+  font-family: "Manrope", sans-serif;
+  font-size: 1rem;
+}
+
+.editor-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.editor-tools button,
+.source-actions button {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  padding: 8px 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.editor-host {
+  min-height: 420px;
+}
+
+.toastui-editor-defaultUI {
+  border-color: var(--line);
+}
+
+.toastui-editor-toolbar,
+.toastui-editor-mode-switch {
+  border-color: var(--line);
+}
+
+.source-panel {
+  border-top: 1px dashed var(--line);
+  padding-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.source-panel textarea {
+  min-height: 220px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.source-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .actions button {
@@ -89,4 +166,18 @@ textarea {
   margin: 10px 0 0;
   color: #b61d3a;
   font-size: 0.9rem;
+}
+
+@media (max-width: 860px) {
+  .editor-panel-head {
+    flex-direction: column;
+  }
+
+  .editor-tools {
+    justify-content: flex-start;
+  }
+
+  .editor-host {
+    min-height: 360px;
+  }
 }

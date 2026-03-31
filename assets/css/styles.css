@@ -593,7 +593,8 @@ h2 {
   align-self: stretch;
 }
 
-.plan-card.has-lead-thumb .plan-lead-thumb img {
+.plan-card.has-lead-thumb .plan-lead-thumb img,
+.plan-card.has-lead-thumb .plan-lead-thumb video {
   height: 100%;
   width: auto;
   max-width: 100%;
@@ -1143,7 +1144,8 @@ body.inquiry-modal-open {
     align-self: stretch;
   }
 
-  .plan-card.has-lead-thumb .plan-lead-thumb img {
+  .plan-card.has-lead-thumb .plan-lead-thumb img,
+  .plan-card.has-lead-thumb .plan-lead-thumb video {
     width: 100%;
     height: auto;
     max-width: 100%;

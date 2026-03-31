@@ -12,6 +12,7 @@ const tabletMediaQuery = window.matchMedia('(min-width: 600px) and (max-width: 1
 const inquiryFormUrl = 'https://tally.so/r/oboZNx';
 const inquiryEmbedUrl = 'https://tally.so/embed/oboZNx?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1';
 let inquiryModalState = null;
+const LOCAL_MEDIA_LIBRARY_KEY = 'bitHappenMediaLibrary_v1';
 
 function getViewportBreakpointLabel(width) {
   if (width <= 599) return 'Phone <= 599px';
@@ -35,7 +36,9 @@ function escapeHtml(value) {
 }
 
 function resolveMediaPath(src) {
-  const value = String(src || '').trim();
+  const value = String(src || '')
+    .trim()
+    .replace(/((?:\.\.\/|\.\/)?assets\/media\/[^?#]+)\.(png|jpg|jpeg)(?=([?#].*)?$)/i, '$1.webp');
   if (!value) return '';
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
   if (value.startsWith('/')) return value;
@@ -81,8 +84,24 @@ async function fetchMediaLibraryFromSupabase() {
   }
 }
 
+function loadLocalMediaLibraryItems() {
+  try {
+    const raw = localStorage.getItem(LOCAL_MEDIA_LIBRARY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
 async function getMediaLibraryItems() {
   if (Array.isArray(mediaLibraryCache)) {
+    return mediaLibraryCache;
+  }
+
+  const localItems = loadLocalMediaLibraryItems();
+  if (localItems.length) {
+    mediaLibraryCache = localItems;
     return mediaLibraryCache;
   }
 
@@ -108,34 +127,52 @@ function getRepresentativeThumbByCardId(mediaItems, cardId) {
   return resolveMediaPath(representative.src || '');
 }
 
-function resetTabletLeadThumbStyles(thumb, img) {
+function getLeadMediaByCardId(mediaItems, cardId) {
+  if (!Array.isArray(mediaItems) || !cardId) return null;
+
+  const representativeThumb = getRepresentativeThumbByCardId(mediaItems, cardId);
+  if (representativeThumb) {
+    return { type: 'image', src: representativeThumb, poster: '' };
+  }
+
+  const videoItem = mediaItems.find((item) => item && item.cardId === cardId && item.type === 'video' && item.src);
+  if (!videoItem) return null;
+
+  return {
+    type: 'video',
+    src: resolveMediaPath(videoItem.src || ''),
+    poster: resolveMediaPath(videoItem.poster || ''),
+  };
+}
+
+function resetTabletLeadThumbStyles(thumb, media) {
   thumb.style.maxWidth = '';
   thumb.style.width = '';
   thumb.style.height = '';
   thumb.style.alignSelf = '';
-  img.style.maxWidth = '';
-  img.style.width = '';
-  img.style.height = '';
+  media.style.maxWidth = '';
+  media.style.width = '';
+  media.style.height = '';
 }
 
 function adjustTabletLeadThumbs() {
   const leadThumbs = document.querySelectorAll('.plan-card.has-lead-thumb .plan-lead-thumb');
 
   leadThumbs.forEach((thumb) => {
-    const img = thumb.querySelector('img');
+    const media = thumb.querySelector('img, video');
     const card = thumb.closest('.plan-card');
-    if (!img || !card) {
+    if (!media || !card) {
       return;
     }
 
-    resetTabletLeadThumbStyles(thumb, img);
+    resetTabletLeadThumbStyles(thumb, media);
 
     if (!tabletMediaQuery.matches) {
       return;
     }
 
     const applyLimit = () => {
-      resetTabletLeadThumbStyles(thumb, img);
+      resetTabletLeadThumbStyles(thumb, media);
 
       const cardWidth = card.getBoundingClientRect().width;
       const thumbWidth = thumb.getBoundingClientRect().width;
@@ -149,13 +186,17 @@ function adjustTabletLeadThumbs() {
       thumb.style.width = '100%';
       thumb.style.height = 'auto';
       thumb.style.alignSelf = 'center';
-      img.style.maxWidth = '100%';
-      img.style.width = '100%';
-      img.style.height = 'auto';
+      media.style.maxWidth = '100%';
+      media.style.width = '100%';
+      media.style.height = 'auto';
     };
 
-    if (!img.complete) {
-      img.addEventListener('load', applyLimit, { once: true });
+    if (media.tagName === 'IMG' && !media.complete) {
+      media.addEventListener('load', applyLimit, { once: true });
+    }
+
+    if (media.tagName === 'VIDEO' && !media.videoWidth) {
+      media.addEventListener('loadedmetadata', applyLimit, { once: true });
     }
 
     applyLimit();
@@ -198,15 +239,19 @@ async function renderPlanCards(group = 'all') {
     const ctaStyle = card.ctaStyle === 'ghost' ? 'ghost' : 'primary';
     const ctaLabel = '상세보기';
     const detailHref = `pages/solution-detail.html?id=${encodeURIComponent(card.id)}`;
-    const representativeThumb = span >= 2 ? getRepresentativeThumbByCardId(mediaItems, card.id) : '';
-    if (representativeThumb) {
+    const leadMedia = span >= 2 ? getLeadMediaByCardId(mediaItems, card.id) : null;
+    if (leadMedia?.src) {
       article.classList.add('has-lead-thumb');
     }
 
-    const thumbMarkup = representativeThumb
+    const thumbMarkup = leadMedia?.src
       ? `<a class="plan-lead-thumb" href="${detailHref}" aria-label="${escapeHtml(
           card.title || '상세보기'
-        )} 대표 이미지"><img src="${escapeHtml(representativeThumb)}" alt="${escapeHtml(card.title || '대표 이미지')}" loading="lazy" decoding="async" /></a>`
+        )} 미디어 썸네일">${
+          leadMedia.type === 'video'
+            ? `<video src="${escapeHtml(leadMedia.src)}" ${leadMedia.poster ? `poster="${escapeHtml(leadMedia.poster)}"` : ''} muted playsinline loop autoplay preload="metadata" aria-hidden="true"></video>`
+            : `<img src="${escapeHtml(leadMedia.src)}" alt="${escapeHtml(card.title || '대표 이미지')}" loading="lazy" decoding="async" />`
+        }</a>`
       : '';
 
     article.innerHTML = `

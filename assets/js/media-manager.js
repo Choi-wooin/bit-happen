@@ -7,6 +7,9 @@ const STORAGE_KEY = 'bitHappenMediaLibrary_v1';
 const LIBRARY_FILE_NAME = 'media-library.js';
 const MEDIA_BASE_PATH = 'assets/media/';
 const DEFAULT_MEDIA_STATE_KEY = 'mediaLibrary';
+const MEDIA_DIR_DB_NAME = 'bitHappenMediaDirectory';
+const MEDIA_DIR_STORE_NAME = 'handles';
+const MEDIA_DIR_HANDLE_KEY = 'assets-media';
 
 const form = document.getElementById('upload-form');
 const cardSelect = document.getElementById('card-id');
@@ -15,7 +18,9 @@ const representativeInput = document.getElementById('representative-thumb');
 const titleInput = document.getElementById('title');
 const urlTypeSelect = document.getElementById('url-type');
 const mediaUrlInput = document.getElementById('media-url');
+const localImageFilesInput = document.getElementById('local-image-files');
 const posterUrlInput = document.getElementById('poster-url');
+const connectMediaDirectoryButton = document.getElementById('connect-media-directory');
 const previewMediaUrlButton = document.getElementById('preview-media-url');
 const addMediaUrlButton = document.getElementById('add-media-url');
 const resetButton = document.getElementById('reset-library');
@@ -24,10 +29,13 @@ const copyJsonButton = document.getElementById('copy-json');
 const copyLibraryFileButton = document.getElementById('copy-library-file');
 const libraryRoot = document.getElementById('library');
 const selectedPreviewRoot = document.getElementById('selected-preview');
+const mediaDirectoryStatus = document.getElementById('media-directory-status');
+const localImageStatus = document.getElementById('local-image-status');
 const urlPreviewRoot = document.getElementById('url-preview');
-const MAX_VIDEO_UPLOAD_BYTES = 10 * 1024 * 1024;
 let selectedPreviewUrls = [];
+let urlPreviewObjectUrls = [];
 let libraryCache = [];
+let mediaDirectoryHandle = null;
 
 const GROUP_LABELS = {
   kiosk: 'Kiosk',
@@ -51,8 +59,14 @@ function esc(value) {
     .replaceAll("'", '&#39;');
 }
 
-function resolveMediaPath(src) {
+function normalizeAssetImagePathToWebp(src) {
   const value = String(src || '').trim();
+  if (!value) return '';
+  return value.replace(/((?:\.\.\/|\.\/)?assets\/media\/[^?#]+)\.(png|jpg|jpeg)(?=([?#].*)?$)/i, '$1.webp');
+}
+
+function resolveMediaPath(src) {
+  const value = normalizeAssetImagePathToWebp(src);
   if (!value) return '';
 
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
@@ -64,7 +78,7 @@ function resolveMediaPath(src) {
 }
 
 function normalizeStoredAssetPath(src) {
-  const value = String(src || '').trim();
+  const value = normalizeAssetImagePathToWebp(src);
   if (!value) return '';
   if (value.startsWith('../assets/')) return value.slice(3);
   if (value.startsWith('./assets/')) return value.slice(2);
@@ -226,6 +240,467 @@ function formatLibraryFileContent(items) {
   return `window.BitHappenMediaLibrary = ${JSON.stringify(payload, null, 2)};`;
 }
 
+function updateMediaDirectoryStatus(message, state = 'default') {
+  if (!mediaDirectoryStatus) return;
+  mediaDirectoryStatus.textContent = message;
+  mediaDirectoryStatus.dataset.state = state;
+}
+
+function updateLocalImageStatus() {
+  if (!localImageStatus || !localImageFilesInput) return;
+
+  const files = Array.from(localImageFilesInput.files || []);
+  if (!files.length) {
+    localImageStatus.textContent = '선택된 로컬 이미지가 없습니다.';
+    return;
+  }
+
+  const previewNames = files.slice(0, 3).map((file) => file.name).join(', ');
+  const suffix = files.length > 3 ? ` 외 ${files.length - 3}개` : '';
+  localImageStatus.textContent = `선택됨: ${previewNames}${suffix}`;
+}
+
+function clearUrlPreviewObjectUrls() {
+  urlPreviewObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+  urlPreviewObjectUrls = [];
+}
+
+function openMediaDirectoryDatabase() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      reject(new Error('브라우저가 IndexedDB를 지원하지 않습니다.'));
+      return;
+    }
+
+    const request = window.indexedDB.open(MEDIA_DIR_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(MEDIA_DIR_STORE_NAME)) {
+        db.createObjectStore(MEDIA_DIR_STORE_NAME);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('미디어 디렉터리 저장소를 열지 못했습니다.'));
+  });
+}
+
+async function saveMediaDirectoryHandle(handle) {
+  const db = await openMediaDirectoryDatabase();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(MEDIA_DIR_STORE_NAME, 'readwrite');
+    tx.objectStore(MEDIA_DIR_STORE_NAME).put(handle, MEDIA_DIR_HANDLE_KEY);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error('미디어 폴더 핸들을 저장하지 못했습니다.'));
+  });
+  db.close();
+}
+
+async function loadStoredMediaDirectoryHandle() {
+  const db = await openMediaDirectoryDatabase();
+  const handle = await new Promise((resolve, reject) => {
+    const tx = db.transaction(MEDIA_DIR_STORE_NAME, 'readonly');
+    const request = tx.objectStore(MEDIA_DIR_STORE_NAME).get(MEDIA_DIR_HANDLE_KEY);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => reject(request.error || new Error('저장된 미디어 폴더 핸들을 읽지 못했습니다.'));
+  });
+  db.close();
+  return handle;
+}
+
+async function restoreMediaDirectoryHandle() {
+  if (!window.showDirectoryPicker || !window.indexedDB) return null;
+
+  try {
+    const storedHandle = await loadStoredMediaDirectoryHandle();
+    if (!storedHandle) return null;
+
+    mediaDirectoryHandle = storedHandle;
+    const permission = await storedHandle.queryPermission?.({ mode: 'readwrite' });
+    if (permission === 'granted') {
+      updateMediaDirectoryStatus('연결 복원됨: assets/media 폴더', 'connected');
+      return storedHandle;
+    }
+
+    updateMediaDirectoryStatus('저장된 assets/media 폴더를 찾았습니다. 버튼을 눌러 권한을 다시 허용하세요.', 'warning');
+    return storedHandle;
+  } catch (_error) {
+    updateMediaDirectoryStatus('저장된 media 폴더 연결을 복원하지 못했습니다.', 'warning');
+    return null;
+  }
+}
+
+async function verifyMediaDirectoryPermission(handle) {
+  if (!handle) return false;
+  const options = { mode: 'readwrite' };
+  if ((await handle.queryPermission?.(options)) === 'granted') return true;
+  return (await handle.requestPermission?.(options)) === 'granted';
+}
+
+async function ensureMediaDirectoryHandle() {
+  if (!window.showDirectoryPicker) {
+    throw new Error('이 기능은 Chrome 기반 브라우저에서 Live Server처럼 보안 컨텍스트로 실행될 때만 지원됩니다.');
+  }
+
+  if (mediaDirectoryHandle && (await verifyMediaDirectoryPermission(mediaDirectoryHandle))) {
+    updateMediaDirectoryStatus(`연결됨: ${mediaDirectoryHandle.name}`, 'connected');
+    return mediaDirectoryHandle;
+  }
+
+  const pickedHandle = await window.showDirectoryPicker({ mode: 'readwrite', id: 'bit-happen-media-dir' });
+  if (!pickedHandle) {
+    throw new Error('assets/media 폴더 선택이 취소되었습니다.');
+  }
+
+  if (pickedHandle.name !== 'media') {
+    const shouldContinue = window.confirm('선택한 폴더 이름이 media 가 아닙니다. 그래도 계속하시겠습니까?');
+    if (!shouldContinue) {
+      throw new Error('assets/media 폴더를 다시 선택해 주세요.');
+    }
+    updateMediaDirectoryStatus(`주의: ${pickedHandle.name} 폴더가 연결되었습니다.`, 'warning');
+  }
+
+  const granted = await verifyMediaDirectoryPermission(pickedHandle);
+  if (!granted) {
+    throw new Error('assets/media 폴더에 대한 읽기/쓰기 권한이 필요합니다.');
+  }
+
+  mediaDirectoryHandle = pickedHandle;
+  await saveMediaDirectoryHandle(pickedHandle);
+  if (pickedHandle.name === 'media') {
+    updateMediaDirectoryStatus('연결됨: assets/media 폴더', 'connected');
+  }
+  return pickedHandle;
+}
+
+function replaceExtensionWithWebp(fileName) {
+  const name = String(fileName || '').trim();
+  if (!name) return `image-${Date.now()}.webp`;
+  return /\.[^.]+$/.test(name) ? name.replace(/\.[^.]+$/, '.webp') : `${name}.webp`;
+}
+
+function buildCustomWebpFileName(baseName, index = 0, total = 1) {
+  const rawBase = String(baseName || '').trim();
+  const sanitizedBase = rawBase.replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+  const fallbackBase = sanitizedBase || `image-${Date.now()}`;
+  if (total <= 1) {
+    return replaceExtensionWithWebp(fallbackBase);
+  }
+  return replaceExtensionWithWebp(`${fallbackBase}-${index + 1}`);
+}
+
+function buildUploadedMediaFileName(baseName, originalName, index = 0, total = 1) {
+  const rawBase = String(baseName || '').trim();
+  const original = String(originalName || '').trim();
+  const originalExtMatch = original.match(/\.[^.]+$/);
+  const originalExtension = originalExtMatch ? originalExtMatch[0] : '';
+  const sanitizedBase = rawBase.replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+  const fallbackBase = stripFileExtension(original) || `media-${Date.now()}`;
+  const resolvedBase = stripFileExtension(sanitizedBase) || fallbackBase;
+  const baseWithIndex = total > 1 ? `${resolvedBase}-${index + 1}` : resolvedBase;
+  return `${baseWithIndex}${originalExtension}`;
+}
+
+function stripFileExtension(fileName) {
+  return String(fileName || '').replace(/\.[^.]+$/, '').trim();
+}
+
+async function convertLocalImageFileToWebp(file, preferredFileName = '') {
+  if (!(file instanceof File) || detectMediaType(file) !== 'image') {
+    throw new Error('PNG, JPG, WebP 이미지 파일만 선택할 수 있습니다.');
+  }
+
+  const bitmap = await createImageBitmap(file);
+  try {
+    const width = bitmap.width || 0;
+    const height = bitmap.height || 0;
+    const targetFileName = replaceExtensionWithWebp(preferredFileName || file.name);
+
+    if (String(file.type || '').toLowerCase() === 'image/webp' || /\.webp$/i.test(file.name)) {
+      return {
+        blob: file,
+        fileName: targetFileName,
+        width,
+        height,
+      };
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('이미지 변환용 캔버스 컨텍스트를 생성하지 못했습니다.');
+    }
+
+    context.drawImage(bitmap, 0, 0, width, height);
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((nextBlob) => {
+        if (nextBlob) {
+          resolve(nextBlob);
+          return;
+        }
+        reject(new Error('WebP 변환에 실패했습니다.'));
+      }, 'image/webp', 0.9);
+    });
+
+    return {
+      blob,
+      fileName: targetFileName,
+      width,
+      height,
+    };
+  } finally {
+    bitmap.close?.();
+  }
+}
+
+async function writeBlobToMediaDirectory(fileName, blob) {
+  const directoryHandle = await ensureMediaDirectoryHandle();
+  const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+  const writable = await fileHandle.createWritable();
+
+  try {
+    if (blob instanceof Blob) {
+      await writable.write(await blob.arrayBuffer());
+    } else {
+      await writable.write(blob);
+    }
+  } finally {
+    await writable.close();
+  }
+
+  const writtenFile = await fileHandle.getFile();
+  if (!writtenFile || writtenFile.size <= 0) {
+    throw new Error(`assets/media/${fileName} 파일 저장을 확인하지 못했습니다.`);
+  }
+
+  return writtenFile;
+}
+
+function extractManagedAssetFileName(src) {
+  const normalized = normalizeStoredAssetPath(src);
+  if (!normalized || !normalized.startsWith(MEDIA_BASE_PATH)) return '';
+
+  const relativeName = normalized.slice(MEDIA_BASE_PATH.length).split('#')[0].split('?')[0].trim();
+  if (!relativeName || relativeName.includes('/') || relativeName.includes('\\')) return '';
+  return relativeName;
+}
+
+async function deleteMediaFileFromDirectory(fileName) {
+  if (!fileName) return false;
+
+  const directoryHandle = await ensureMediaDirectoryHandle();
+  try {
+    await directoryHandle.removeEntry(fileName);
+    return true;
+  } catch (error) {
+    if (error && error.name === 'NotFoundError') {
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function cleanupManagedFilesForItem(item, remainingItems) {
+  const candidateFiles = [extractManagedAssetFileName(item?.src), extractManagedAssetFileName(item?.poster)].filter(Boolean);
+  if (!candidateFiles.length) return [];
+
+  const keptFiles = new Set(
+    (Array.isArray(remainingItems) ? remainingItems : [])
+      .flatMap((entry) => [extractManagedAssetFileName(entry?.src), extractManagedAssetFileName(entry?.poster)])
+      .filter(Boolean)
+  );
+
+  const deletedFiles = [];
+  for (const fileName of [...new Set(candidateFiles)]) {
+    if (keptFiles.has(fileName)) continue;
+    const removed = await deleteMediaFileFromDirectory(fileName);
+    if (removed) {
+      deletedFiles.push(fileName);
+    }
+  }
+
+  return deletedFiles;
+}
+
+function createLibraryItem({
+  cardId,
+  mediaType,
+  title,
+  fileName,
+  src,
+  poster = '',
+  width = 0,
+  height = 0,
+  isRepresentative = false,
+  sourceMode = 'url',
+}) {
+  return {
+    id: `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    cardId,
+    type: mediaType,
+    title,
+    fileName,
+    src,
+    poster,
+    sourceMode,
+    width,
+    height,
+    isRepresentative,
+    createdAt: Date.now(),
+  };
+}
+
+function resetUrlEntryState() {
+  mediaUrlInput.value = '';
+  posterUrlInput.value = '';
+  if (localImageFilesInput) {
+    localImageFilesInput.value = '';
+  }
+  updateLocalImageStatus();
+  urlPreviewRoot.innerHTML = '<p class="empty">미리보기할 URL을 입력해 주세요.</p>';
+}
+
+function syncMediaFileNameWithLocalSelection() {
+  const localFiles = Array.from(localImageFilesInput?.files || []).filter((file) => detectMediaType(file) === 'image');
+  const currentValue = String(mediaUrlInput.value || '').trim();
+
+  if (!localFiles.length) {
+    return;
+  }
+
+  if (localFiles.length === 1 && !currentValue) {
+    mediaUrlInput.value = replaceExtensionWithWebp(localFiles[0].name);
+    return;
+  }
+
+  if (localFiles.length > 1 && currentValue && currentValue === replaceExtensionWithWebp(localFiles[0].name)) {
+    mediaUrlInput.value = '';
+  }
+}
+
+function syncMediaFileNameWithSelectedFiles(files) {
+  const selectedFiles = Array.isArray(files) ? files.filter(Boolean) : [];
+  const currentValue = String(mediaUrlInput.value || '').trim();
+  if (!selectedFiles.length) {
+    return;
+  }
+
+  if (selectedFiles.length === 1) {
+    const file = selectedFiles[0];
+    const mediaType = detectMediaType(file);
+    if (mediaType === 'image') {
+      if (currentValue) {
+        return;
+      }
+      mediaUrlInput.value = replaceExtensionWithWebp(file.name);
+      return;
+    }
+    if (mediaType === 'video') {
+      mediaUrlInput.value = String(file.name || '').trim();
+      if (localImageFilesInput) {
+        localImageFilesInput.value = '';
+      }
+      updateLocalImageStatus();
+    }
+  }
+}
+
+function syncTitleWithSelectedFiles(files) {
+  const selectedFiles = Array.isArray(files) ? files : [];
+  const currentTitle = String(titleInput.value || '').trim();
+  if (!selectedFiles.length || currentTitle) {
+    return;
+  }
+
+  titleInput.value = stripFileExtension(selectedFiles[0].name || '');
+}
+
+async function addLocalImagesAsWebpAssets() {
+  const files = Array.from(localImageFilesInput?.files || []);
+  if (!files.length) return false;
+
+  const cardId = cardSelect.value;
+  const title = String(titleInput.value || '').trim();
+  const customFileName = String(mediaUrlInput.value || '').trim();
+  const wantsRepresentative = representativeInput?.checked === true;
+  if (!cardId) {
+    throw new Error('카드를 먼저 선택해 주세요.');
+  }
+
+  if (customFileName && normalizeMediaFileName(customFileName) === null) {
+    throw new Error('미디어 파일명에는 경로 구분자(/, \\)를 사용할 수 없습니다. 파일명만 입력해 주세요.');
+  }
+
+  if (customFileName && files.length > 1) {
+    throw new Error('로컬 이미지를 여러 개 선택한 경우에는 미디어 파일명을 비워 두세요. 한 개 선택했을 때만 직접 파일명을 지정할 수 있습니다.');
+  }
+
+  await ensureMediaDirectoryHandle();
+
+  const current = loadLibrary();
+  let uploadedCount = 0;
+  let representativeAssigned = false;
+
+  for (let index = 0; index < files.length; index += 1) {
+    const file = files[index];
+    if (detectMediaType(file) !== 'image') continue;
+
+    const preferredFileName = customFileName
+      ? buildCustomWebpFileName(customFileName, index, files.length)
+      : replaceExtensionWithWebp(file.name);
+    const converted = await convertLocalImageFileToWebp(file, preferredFileName);
+    await writeBlobToMediaDirectory(converted.fileName, converted.blob);
+
+    const isRepresentative = wantsRepresentative && representativeAssigned === false;
+    if (isRepresentative) {
+      representativeAssigned = true;
+    }
+
+    current.push(
+      createLibraryItem({
+        cardId,
+        mediaType: 'image',
+        title: files.length === 1 && title ? title : stripFileExtension(converted.fileName),
+        fileName: converted.fileName,
+        src: toMediaAssetUrl(converted.fileName),
+        width: converted.width,
+        height: converted.height,
+        isRepresentative,
+        sourceMode: 'url',
+      })
+    );
+    uploadedCount += 1;
+  }
+
+  if (uploadedCount === 0) {
+    throw new Error('변환 가능한 로컬 이미지가 없습니다. PNG, JPG, WebP 파일을 선택해 주세요.');
+  }
+
+  let next = current;
+  if (representativeAssigned) {
+    const representativeItem = current
+      .slice()
+      .reverse()
+      .find((item) => item.cardId === cardId && item.isRepresentative === true);
+    if (representativeItem) {
+      next = normalizeRepresentativeByCard(current, cardId, representativeItem.id);
+    }
+  }
+
+  const result = await persistLibrary(next);
+  resetUrlEntryState();
+  renderLibrary();
+
+  if (result.remote === false) {
+    alert('WebP 파일은 assets/media와 로컬 라이브러리에 저장되었지만 Supabase 동기화에는 실패했습니다.');
+    return true;
+  }
+
+  alert(`${uploadedCount}개 이미지를 WebP로 변환해 assets/media에 저장하고 라이브러리에 추가했습니다.`);
+  return true;
+}
+
 function toDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -270,8 +745,13 @@ async function getMediaInfo(type, src) {
 }
 
 function detectMediaType(file) {
-  if (file.type.startsWith('video/')) return 'video';
-  if (file.type.startsWith('image/')) return 'image';
+  const mimeType = String(file?.type || '').toLowerCase();
+  if (mimeType.startsWith('video/')) return 'video';
+  if (mimeType.startsWith('image/')) return 'image';
+
+  const fileName = String(file?.name || '').toLowerCase();
+  if (/\.(mp4|webm|ogg|mov)$/.test(fileName)) return 'video';
+  if (/\.(png|jpg|jpeg|webp|gif|bmp|svg)$/.test(fileName)) return 'image';
   return null;
 }
 
@@ -472,11 +952,32 @@ function renderLibrary() {
       const id = card?.getAttribute('data-id');
       if (!id) return;
 
-      const next = loadLibrary().filter((item) => item.id !== id);
+      const current = loadLibrary();
+      const target = current.find((item) => item.id === id);
+      if (!target) return;
+
+      if (!confirm(`선택한 미디어를 삭제할까요?\n파일명: ${getDisplayFileName(target)}`)) {
+        return;
+      }
+
+      const next = current.filter((item) => item.id !== id);
       const result = await persistLibrary(next);
+      let deletedFiles = [];
+
+      try {
+        deletedFiles = await cleanupManagedFilesForItem(target, next);
+      } catch (error) {
+        alert(error instanceof Error ? error.message : 'assets/media 파일 정리 중 오류가 발생했습니다.');
+      }
+
       renderLibrary();
       if (result.remote === false) {
         alert('원격(Supabase) 동기화에 실패했습니다. 연결 상태를 확인해 주세요.');
+        return;
+      }
+
+      if (deletedFiles.length) {
+        alert(`미디어를 삭제했습니다. 정리된 파일: ${deletedFiles.join(', ')}`);
       }
     });
   });
@@ -508,9 +1009,72 @@ function renderLibrary() {
 }
 
 function renderUrlPreview() {
+  clearUrlPreviewObjectUrls();
+
   const inputValue = String(mediaUrlInput.value || '').trim();
   const poster = String(posterUrlInput.value || '').trim();
   const selectedType = String(urlTypeSelect.value || 'auto');
+  const localFiles = Array.from(localImageFilesInput?.files || []).filter((file) => detectMediaType(file) === 'image');
+
+  if (!inputValue && localFiles.length > 0) {
+    urlPreviewRoot.innerHTML = localFiles
+      .map((file) => {
+        const objectUrl = URL.createObjectURL(file);
+        urlPreviewObjectUrls.push(objectUrl);
+        return `
+          <article class="media-item">
+            <div class="media-frame">
+              <span class="media-type">IMAGE</span>
+              <img src="${esc(objectUrl)}" alt="${esc(file.name)}" loading="lazy" />
+            </div>
+            <div class="meta">
+              <strong>${esc(file.name)}</strong>
+              <p>로컬 이미지 / ${formatBytes(file.size)}</p>
+              <p>URL로 미디어 추가 시 WebP로 변환되어 assets/media에 저장됩니다.</p>
+            </div>
+          </article>
+        `;
+      })
+      .join('');
+
+    Array.from(urlPreviewRoot.querySelectorAll('.media-frame')).forEach((frame) => attachRatioForPreview(frame));
+    return;
+  }
+
+  if (inputValue && localFiles.length > 0) {
+    const normalizedFileName = normalizeMediaFileName(inputValue);
+    if (normalizedFileName === null) {
+      urlPreviewRoot.innerHTML = '<p class="empty">파일명만 입력해 주세요. 경로 구분자(/, \\)는 사용할 수 없습니다.</p>';
+      return;
+    }
+
+    if (localFiles.length > 1) {
+      urlPreviewRoot.innerHTML = '<p class="empty">로컬 이미지를 여러 개 선택한 경우 미디어 파일명은 비워 두세요.</p>';
+      return;
+    }
+
+    const file = localFiles[0];
+    const objectUrl = URL.createObjectURL(file);
+    urlPreviewObjectUrls.push(objectUrl);
+    const targetFileName = buildCustomWebpFileName(normalizedFileName, 0, 1);
+    urlPreviewRoot.innerHTML = `
+      <article class="media-item">
+        <div class="media-frame">
+          <span class="media-type">IMAGE</span>
+          <img src="${esc(objectUrl)}" alt="${esc(file.name)}" loading="lazy" />
+        </div>
+        <div class="meta">
+          <strong>${esc(file.name)}</strong>
+          <p>저장 예정 파일명: ${esc(targetFileName)}</p>
+          <p>URL로 미디어 추가 시 WebP로 변환되어 assets/media에 저장됩니다.</p>
+        </div>
+      </article>
+    `;
+
+    const frame = urlPreviewRoot.querySelector('.media-frame');
+    if (frame) attachRatioForPreview(frame);
+    return;
+  }
 
   if (!inputValue) {
     urlPreviewRoot.innerHTML = '<p class="empty">미리보기할 URL을 입력해 주세요.</p>';
@@ -580,45 +1144,76 @@ form.addEventListener('submit', async (event) => {
 
   const cardId = cardSelect.value;
   const title = titleInput.value.trim();
+  const customFileName = String(mediaUrlInput.value || '').trim();
   const wantsRepresentative = representativeInput?.checked === true;
+
   const current = loadLibrary();
   let uploadedCount = 0;
   let representativeAssigned = false;
 
   try {
-    for (const file of files) {
+    if (!cardId) {
+      throw new Error('카드를 먼저 선택해 주세요.');
+    }
+
+    if (customFileName && normalizeMediaFileName(customFileName) === null) {
+      throw new Error('미디어 파일명에는 경로 구분자(/, \\)를 사용할 수 없습니다. 파일명만 입력해 주세요.');
+    }
+
+    if (customFileName && files.length > 1) {
+      throw new Error('동영상을 여러 개 선택한 경우에는 미디어 파일명을 비워 두세요. 한 개 선택했을 때만 직접 파일명을 지정할 수 있습니다.');
+    }
+
+    await ensureMediaDirectoryHandle();
+
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index];
       const mediaType = detectMediaType(file);
       if (!mediaType) continue;
 
-      if (mediaType === 'video' && file.size > MAX_VIDEO_UPLOAD_BYTES) {
-        throw new Error(
-          `동영상 ${file.name} 용량이 너무 큽니다. 현재 브라우저 저장 방식에서는 10MB 이하만 권장됩니다. assets 폴더 경로(URL) 방식 사용을 권장합니다.`
-        );
+      if (mediaType !== 'video') {
+        throw new Error('위 업로드 버튼은 동영상 전용입니다. 이미지는 아래 URL 등록 섹션의 로컬 이미지 선택을 사용해 주세요.');
       }
 
-      const src = await toDataUrl(file);
-      const size = await getMediaInfo(mediaType, src);
-      const id = `media-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const isRepresentative =
         wantsRepresentative && mediaType === 'image' && representativeAssigned === false;
       if (isRepresentative) {
         representativeAssigned = true;
       }
 
-      current.push({
-        id,
-        cardId,
-        type: mediaType,
-        title: title || file.name,
-        fileName: file.name,
-        src,
-        poster: '',
-        sourceMode: 'dataurl',
-        width: size.width,
-        height: size.height,
-        isRepresentative,
-        createdAt: Date.now(),
-      });
+      const targetFileName = customFileName
+        ? buildUploadedMediaFileName(customFileName, file.name, index, files.length)
+        : file.name;
+      const writtenFile = await writeBlobToMediaDirectory(targetFileName, file);
+      if (writtenFile.name !== targetFileName) {
+        throw new Error(`assets/media/${targetFileName} 파일 저장 이름이 예상과 다릅니다.`);
+      }
+      if (writtenFile.size !== file.size) {
+        throw new Error(`assets/media/${targetFileName} 파일 저장 크기 검증에 실패했습니다.`);
+      }
+
+      const previewUrl = URL.createObjectURL(file);
+      let size = { width: 0, height: 0 };
+      try {
+        size = await getMediaInfo(mediaType, previewUrl);
+      } finally {
+        URL.revokeObjectURL(previewUrl);
+      }
+
+      current.push(
+        createLibraryItem({
+          cardId,
+          mediaType,
+          title: files.length === 1 && title ? title : stripFileExtension(targetFileName),
+          fileName: targetFileName,
+          src: toMediaAssetUrl(targetFileName),
+          poster: '',
+          width: size.width,
+          height: size.height,
+          isRepresentative,
+          sourceMode: 'url',
+        })
+      );
       uploadedCount += 1;
     }
 
@@ -634,20 +1229,27 @@ form.addEventListener('submit', async (event) => {
     }
 
     if (uploadedCount === 0) {
-      alert('업로드 가능한 파일이 없습니다. 이미지 또는 동영상 파일을 선택해 주세요.');
+      alert('업로드 가능한 동영상 파일이 없습니다.');
       return;
     }
 
     const result = await persistLibrary(nextItems);
     form.reset();
     clearSelectedPreview();
+    resetUrlEntryState();
+    updateLocalImageStatus();
     makeCardOptions();
     renderLibrary();
     if (result.remote === false) {
-      alert('파일은 로컬에 저장되었지만 Supabase 동기화에 실패했습니다.');
+      alert('동영상 파일은 assets/media와 로컬 라이브러리에 저장되었지만 Supabase 동기화에는 실패했습니다.');
       return;
     }
-    alert(`${uploadedCount}개 파일 업로드를 저장했습니다.`);
+    const savedNames = current
+      .slice(-uploadedCount)
+      .map((item) => item.fileName)
+      .filter(Boolean)
+      .join(', ');
+    alert(`${uploadedCount}개 동영상 파일을 assets/media에 저장하고 라이브러리에 등록했습니다. 저장 파일명: ${savedNames}`);
   } catch (error) {
     alert(error instanceof Error ? error.message : '업로드 저장 중 오류가 발생했습니다.');
   }
@@ -655,10 +1257,24 @@ form.addEventListener('submit', async (event) => {
 
 fileInput.addEventListener('change', () => {
   const files = Array.from(fileInput.files || []);
+  syncTitleWithSelectedFiles(files);
+  syncMediaFileNameWithSelectedFiles(files);
   renderSelectedPreview(files);
 });
 
-addMediaUrlButton.addEventListener('click', async () => {
+addMediaUrlButton.addEventListener('click', async (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  try {
+    if (await addLocalImagesAsWebpAssets()) {
+      return;
+    }
+  } catch (error) {
+    alert(error instanceof Error ? error.message : '로컬 이미지 저장 중 오류가 발생했습니다.');
+    return;
+  }
+
   const cardId = cardSelect.value;
   const inputValue = String(mediaUrlInput.value || '').trim();
   const selectedType = String(urlTypeSelect.value || 'auto');
@@ -712,9 +1328,7 @@ addMediaUrlButton.addEventListener('click', async () => {
 
     const next = isRepresentative ? normalizeRepresentativeByCard(current, cardId, id) : current;
     const result = await persistLibrary(next);
-    mediaUrlInput.value = '';
-    posterUrlInput.value = '';
-    urlPreviewRoot.innerHTML = '<p class="empty">미리보기할 URL을 입력해 주세요.</p>';
+    resetUrlEntryState();
     renderLibrary();
     if (result.remote === false) {
       alert('URL은 로컬에 저장되었지만 Supabase 동기화에 실패했습니다.');
@@ -726,8 +1340,31 @@ addMediaUrlButton.addEventListener('click', async () => {
   }
 });
 
-previewMediaUrlButton.addEventListener('click', renderUrlPreview);
+connectMediaDirectoryButton.addEventListener('click', async (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  try {
+    await ensureMediaDirectoryHandle();
+  } catch (error) {
+    alert(error instanceof Error ? error.message : 'assets/media 폴더 연결 중 오류가 발생했습니다.');
+  }
+});
+
+previewMediaUrlButton.addEventListener('click', (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  renderUrlPreview();
+});
 mediaUrlInput.addEventListener('input', renderUrlPreview);
+localImageFilesInput.addEventListener('change', () => {
+  const files = Array.from(localImageFilesInput.files || []).filter((file) => detectMediaType(file) === 'image');
+  updateLocalImageStatus();
+  syncTitleWithSelectedFiles(files);
+  syncMediaFileNameWithSelectedFiles(files);
+  syncMediaFileNameWithLocalSelection();
+  renderUrlPreview();
+});
 posterUrlInput.addEventListener('input', renderUrlPreview);
 urlTypeSelect.addEventListener('change', renderUrlPreview);
 
@@ -766,6 +1403,7 @@ resetButton.addEventListener('click', async () => {
   renderLibrary();
   form.reset();
   clearSelectedPreview();
+  updateLocalImageStatus();
   renderUrlPreview();
   if (result.remote === false) {
     alert('초기화는 로컬에만 반영되었습니다. Supabase 동기화에 실패했습니다.');
@@ -781,5 +1419,8 @@ copyLibraryFileButton.addEventListener('click', async () => {
 
 makeCardOptions();
 clearSelectedPreview();
+updateMediaDirectoryStatus('연결된 assets/media 폴더가 없습니다.');
+updateLocalImageStatus();
 renderUrlPreview();
 initializeLibrary();
+restoreMediaDirectoryHandle();

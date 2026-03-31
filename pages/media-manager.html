@@ -34,50 +34,56 @@
             <input id="title" placeholder="예: 스윙 분석 대시보드" />
           </label>
 
-          <label>이미지/동영상 파일
-            <input id="files" type="file" accept="image/*,video/*" multiple required />
+          <label>동영상 파일
+            <input id="files" type="file" accept="video/*,.mp4,.webm,.ogg,.mov" multiple required />
           </label>
 
           <label class="inline-check">
             <input id="representative-thumb" type="checkbox" />
-            <span>이번 등록 항목을 대표 썸네일로 지정 (이미지만 가능)</span>
+            <span>이번 등록 항목을 대표 썸네일로 지정 (아래 이미지 전용 등록에만 적용)</span>
           </label>
 
-          <p class="hint">여러 파일을 한 번에 업로드할 수 있습니다. 용량이 큰 파일은 브라우저 저장 한계에 걸릴 수 있습니다.</p>
-
-          <section class="url-section">
-            <h3>미디어 URL 등록 (권장)</h3>
-            <label>URL 타입
-              <select id="url-type">
-                <option value="auto">자동 판별</option>
-                <option value="image">이미지</option>
-                <option value="video">동영상</option>
-              </select>
-            </label>
-            <label>미디어 파일명
-              <div class="url-input-with-prefix">
-                <span class="url-prefix">assets/media/</span>
-                <input id="media-url" placeholder="예: demo.jpg 또는 demo.mp4" />
-              </div>
-            </label>
-            <label>포스터 이미지 URL(선택)
-              <input id="poster-url" placeholder="예: assets/media/demo-poster.jpg" />
-            </label>
-            <div class="url-actions">
-              <button type="button" id="preview-media-url">URL 미리보기</button>
-              <button type="button" id="add-media-url">URL로 미디어 추가</button>
-            </div>
-            <p class="hint">대용량 파일은 업로드 대신 URL 등록을 사용하세요.</p>
-            <div id="url-preview" class="url-preview">
-              <p class="empty">미리보기할 URL을 입력해 주세요.</p>
-            </div>
-          </section>
+          <p class="hint">동영상은 여기서 파일을 선택한 뒤 반드시 업로드 저장을 눌러야 assets/media에 복사됩니다. 이미지는 아래 URL 등록 섹션의 로컬 이미지 선택을 사용하세요.</p>
 
           <div class="form-actions">
             <button type="submit">업로드 저장</button>
             <button type="button" id="reset-library">라이브러리 초기화</button>
           </div>
         </form>
+
+        <section class="url-section">
+          <h3>이미지/동영상 URL 등록</h3>
+          <label>URL 타입
+            <select id="url-type">
+              <option value="auto">자동 판별</option>
+              <option value="image">이미지</option>
+              <option value="video">동영상</option>
+            </select>
+          </label>
+          <label>미디어 파일명
+            <div class="url-input-with-prefix">
+              <span class="url-prefix">assets/media/</span>
+              <input id="media-url" placeholder="예: demo.webp 또는 demo.mp4" />
+            </div>
+          </label>
+          <label>로컬 이미지 선택 (PNG/JPG/WebP)
+            <input id="local-image-files" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" multiple />
+          </label>
+          <label>포스터 이미지 URL(선택)
+            <input id="poster-url" placeholder="예: assets/media/demo-poster.webp" />
+          </label>
+          <div class="url-actions">
+            <button type="button" id="connect-media-directory">assets/media 폴더 연결</button>
+            <button type="button" id="preview-media-url">URL 미리보기</button>
+            <button type="button" id="add-media-url">URL로 미디어 추가</button>
+          </div>
+          <p class="hint" id="media-directory-status">연결된 assets/media 폴더가 없습니다.</p>
+          <p class="hint" id="local-image-status">선택된 로컬 이미지가 없습니다.</p>
+          <p class="hint">URL로 미디어 추가는 assets/media에 이미 있는 파일을 카드에 연결하는 기능입니다. 단, 로컬 이미지를 선택한 경우에만 WebP로 변환해 assets/media에 저장한 후 등록합니다.</p>
+          <div id="url-preview" class="url-preview">
+            <p class="empty">미리보기할 URL을 입력해 주세요.</p>
+          </div>
+        </section>
 
         <section class="selected-preview-section">
           <h3>선택 파일 미리보기</h3>

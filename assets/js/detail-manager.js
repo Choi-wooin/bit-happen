@@ -5,18 +5,18 @@ if (!__session) {
 
 const form = document.getElementById('detail-form');
 const cardSelect = document.getElementById('detail-card-id');
-const painsInput = document.getElementById('detail-pains');
-const howInput = document.getElementById('detail-how');
-const scenariosInput = document.getElementById('detail-scenarios');
-const integrationInput = document.getElementById('detail-integration');
-const featuresInput = document.getElementById('detail-features');
-const techSpecsInput = document.getElementById('detail-tech-specs');
-const kpisInput = document.getElementById('detail-kpis');
 const clearButton = document.getElementById('detail-clear');
 const message = document.getElementById('detail-message');
 
 const DETAIL_STATE_KEY_DEFAULT = 'detailOverrides';
+const SECTION_DEFINITIONS = [
+  { key: 'intentHtml', editorId: 'editor-intent', sourceId: 'detail-intent-html' },
+  { key: 'architectureHtml', editorId: 'editor-architecture', sourceId: 'detail-architecture-html' },
+  { key: 'referenceHtml', editorId: 'editor-reference', sourceId: 'detail-reference-html' },
+];
+
 let overrideState = {};
+const editorBindings = new Map();
 
 const GROUP_LABELS = {
   kiosk: 'Kiosk',
@@ -44,16 +44,13 @@ function getSupabaseConfig() {
   };
 }
 
-function parseLines(value) {
+function escapeHtml(value) {
   return String(value || '')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
-
-function stringifyLines(items) {
-  if (!Array.isArray(items)) return '';
-  return items.join('\n');
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function setMessage(text, isError = true) {
@@ -74,21 +71,155 @@ function getDefaultOverrideByCardId(cardId) {
   return defaults[cardId] || null;
 }
 
+function createListBlockHtml(title, items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `<section><h3>${escapeHtml(title)}</h3><ul>${items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></section>`;
+}
+
+function createTechSpecHtml(techSpecs) {
+  if (!Array.isArray(techSpecs) || !techSpecs.length) return '';
+  return `
+    <section>
+      <h3>기술 스펙</h3>
+      <div class="rich-grid-2">
+        ${techSpecs
+          .map(
+            (spec) => `
+              <article class="rich-card">
+                <h4>${escapeHtml(spec?.title || '')}</h4>
+                <ul>${(Array.isArray(spec?.items) ? spec.items : []).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>
+              </article>
+            `
+          )
+          .join('')}
+      </div>
+    </section>
+  `;
+}
+
+function createKpiHtml(kpis) {
+  if (!Array.isArray(kpis) || !kpis.length) return '';
+  return `
+    <section>
+      <h3>KPI</h3>
+      <div class="rich-grid-3">
+        ${kpis
+          .map(
+            (kpi) => `
+              <article class="rich-card">
+                <p class="rich-kpi">${escapeHtml(kpi?.value || '')}</p>
+                <h4>${escapeHtml(kpi?.title || '')}</h4>
+                <p>${escapeHtml(kpi?.desc || '')}</p>
+              </article>
+            `
+          )
+          .join('')}
+      </div>
+    </section>
+  `;
+}
+
+function hasMeaningfulHtml(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return false;
+
+  if (/(<img|<video|<audio|<iframe|<table|<figure|<ul|<ol|<li|<blockquote|<pre|<code|<h[1-6]|<hr)/i.test(raw)) {
+    return true;
+  }
+
+  const normalized = raw
+    .replace(/<p><br><\/p>/gi, '')
+    .replace(/<br\s*\/?>/gi, '')
+    .replace(/&nbsp;/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+
+  return Boolean(normalized);
+}
+
+function normalizeRichHtml(value) {
+  const raw = String(value || '').trim();
+  return hasMeaningfulHtml(raw) ? raw : '';
+}
+
+function convertLegacyOverrideToSections(value) {
+  if (!value || typeof value !== 'object') {
+    return { intentHtml: '', architectureHtml: '', referenceHtml: '' };
+  }
+
+  return {
+    intentHtml: [createListBlockHtml('문제 정의', value.pains), createListBlockHtml('핵심 기능', value.features)]
+      .filter(Boolean)
+      .join(''),
+    architectureHtml: [
+      createListBlockHtml('해결 방식', value.how),
+      createListBlockHtml('기술 연동', value.integration),
+      createTechSpecHtml(value.techSpecs),
+    ]
+      .filter(Boolean)
+      .join(''),
+    referenceHtml: [createListBlockHtml('적용 시나리오', value.scenarios), createKpiHtml(value.kpis)]
+      .filter(Boolean)
+      .join(''),
+  };
+}
+
+function getCurrentSectionContent(source) {
+  if (!source || typeof source !== 'object') {
+    return { intentHtml: '', architectureHtml: '', referenceHtml: '' };
+  }
+
+  const direct = {
+    intentHtml: normalizeRichHtml(source.intentHtml),
+    architectureHtml: normalizeRichHtml(source.architectureHtml),
+    referenceHtml: normalizeRichHtml(source.referenceHtml),
+  };
+
+  if (direct.intentHtml || direct.architectureHtml || direct.referenceHtml) {
+    return direct;
+  }
+
+  return convertLegacyOverrideToSections(source);
+}
+
 function readCurrentCardOverride() {
   const id = cardSelect.value;
   if (!id) return null;
   return overrideState[id] || getDefaultOverrideByCardId(id) || null;
 }
 
+function getEditorBinding(sectionKey) {
+  return editorBindings.get(sectionKey) || null;
+}
+
+function getEditorHtml(sectionKey) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding) return '';
+  return typeof binding.editor.getHTML === 'function' ? String(binding.editor.getHTML() || '').trim() : String(binding.sourceInput.value || '').trim();
+}
+
+function syncSourceFromEditor(sectionKey) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding) return;
+  binding.sourceInput.value = getEditorHtml(sectionKey);
+}
+
+function setEditorHtml(sectionKey, html) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding) return;
+
+  const nextHtml = String(html || '').trim();
+  if (typeof binding.editor.setHTML === 'function') {
+    binding.editor.setHTML(nextHtml || '<p></p>');
+  }
+  binding.sourceInput.value = nextHtml;
+}
+
 function fillFormByCard() {
-  const current = readCurrentCardOverride();
-  painsInput.value = stringifyLines(current?.pains);
-  howInput.value = stringifyLines(current?.how);
-  scenariosInput.value = stringifyLines(current?.scenarios);
-  integrationInput.value = stringifyLines(current?.integration);
-  featuresInput.value = stringifyLines(current?.features);
-  techSpecsInput.value = current?.techSpecs ? JSON.stringify(current.techSpecs, null, 2) : '';
-  kpisInput.value = current?.kpis ? JSON.stringify(current.kpis, null, 2) : '';
+  const current = getCurrentSectionContent(readCurrentCardOverride());
+  SECTION_DEFINITIONS.forEach((section) => {
+    setEditorHtml(section.key, current[section.key] || '');
+  });
 }
 
 async function fetchOverrideState() {
@@ -121,12 +252,7 @@ async function saveOverrideState(state) {
   }
 
   const endpoint = `${cfg.url}/rest/v1/site_state?on_conflict=key`;
-  const payload = [
-    {
-      key: cfg.detailStateKey,
-      value: state,
-    },
-  ];
+  const payload = [{ key: cfg.detailStateKey, value: state }];
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -144,43 +270,106 @@ async function saveOverrideState(state) {
   }
 }
 
-function parseJsonArrayField(value, label) {
-  const raw = String(value || '').trim();
-  if (!raw) return undefined;
-  const parsed = JSON.parse(raw);
-  if (!Array.isArray(parsed)) {
-    throw new Error(`${label}은(는) JSON 배열이어야 합니다.`);
-  }
-  return parsed;
-}
-
 function buildOverridePayload() {
-  const payload = {
-    pains: parseLines(painsInput.value),
-    how: parseLines(howInput.value),
-    scenarios: parseLines(scenariosInput.value),
-    integration: parseLines(integrationInput.value),
-    features: parseLines(featuresInput.value),
-  };
-
-  const cleaned = {};
-  Object.entries(payload).forEach(([key, value]) => {
-    if (Array.isArray(value) && value.length > 0) {
-      cleaned[key] = value;
+  const payload = {};
+  SECTION_DEFINITIONS.forEach((section) => {
+    const html = normalizeRichHtml(getEditorHtml(section.key));
+    if (html) {
+      payload[section.key] = html;
     }
   });
+  return payload;
+}
 
-  const techSpecs = parseJsonArrayField(techSpecsInput.value, '기술 스펙');
-  if (techSpecs && techSpecs.length > 0) {
-    cleaned.techSpecs = techSpecs;
+function buildImageSnippet() {
+  return [
+    '<figure>',
+    '  <img src="assets/media/sample.webp" alt="이미지 설명" />',
+    '  <figcaption>이미지 설명을 입력하세요.</figcaption>',
+    '</figure>',
+  ].join('\n');
+}
+
+function buildVideoSnippet() {
+  return [
+    '<figure>',
+    '  <video controls playsinline preload="metadata" poster="assets/media/sample-poster.webp">',
+    '    <source src="assets/media/sample.mp4" type="video/mp4" />',
+    '  </video>',
+    '  <figcaption>동영상 설명을 입력하세요.</figcaption>',
+    '</figure>',
+  ].join('\n');
+}
+
+function buildTableSnippet() {
+  return [
+    '<table>',
+    '  <thead>',
+    '    <tr><th>항목</th><th>내용</th></tr>',
+    '  </thead>',
+    '  <tbody>',
+    '    <tr><td>예시 1</td><td>설명을 입력하세요.</td></tr>',
+    '    <tr><td>예시 2</td><td>설명을 입력하세요.</td></tr>',
+    '  </tbody>',
+    '</table>',
+  ].join('\n');
+}
+
+function insertTemplate(sectionKey, template) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding || typeof binding.editor.insertText !== 'function') return;
+  binding.editor.insertText(`\n${template}\n`);
+  syncSourceFromEditor(sectionKey);
+}
+
+function toggleSourcePanel(sectionKey) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding) return;
+  if (binding.sourcePanel.hasAttribute('hidden')) {
+    syncSourceFromEditor(sectionKey);
+    binding.sourcePanel.removeAttribute('hidden');
+    return;
+  }
+  binding.sourcePanel.setAttribute('hidden', 'hidden');
+}
+
+function applySourceToEditor(sectionKey) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding) return;
+  setEditorHtml(sectionKey, binding.sourceInput.value);
+}
+
+function createEditorBindings() {
+  const Editor = window.toastui?.Editor;
+  if (!Editor) {
+    throw new Error('TOAST UI Editor를 불러오지 못했습니다. 네트워크 연결을 확인해 주세요.');
   }
 
-  const kpis = parseJsonArrayField(kpisInput.value, 'KPI');
-  if (kpis && kpis.length > 0) {
-    cleaned.kpis = kpis;
-  }
+  SECTION_DEFINITIONS.forEach((section) => {
+    const editorRoot = document.getElementById(section.editorId);
+    const sourceInput = document.getElementById(section.sourceId);
+    const sourcePanel = sourceInput?.closest('.source-panel');
+    if (!editorRoot || !sourceInput || !sourcePanel) return;
 
-  return cleaned;
+    const editor = new Editor({
+      el: editorRoot,
+      height: '420px',
+      initialEditType: 'wysiwyg',
+      previewStyle: 'vertical',
+      usageStatistics: false,
+      hideModeSwitch: false,
+      toolbarItems: [
+        ['heading', 'bold', 'italic', 'strike'],
+        ['hr', 'quote'],
+        ['ul', 'ol', 'task', 'indent', 'outdent'],
+        ['table', 'image', 'link'],
+        ['code', 'codeblock'],
+      ],
+    });
+
+    editor.on('change', () => syncSourceFromEditor(section.key));
+    editorBindings.set(section.key, { editor, sourceInput, sourcePanel });
+  });
 }
 
 form.addEventListener('submit', async (event) => {
@@ -196,6 +385,7 @@ form.addEventListener('submit', async (event) => {
   try {
     const payload = buildOverridePayload();
     const next = { ...overrideState };
+
     if (Object.keys(payload).length === 0) {
       delete next[cardId];
     } else {
@@ -211,13 +401,7 @@ form.addEventListener('submit', async (event) => {
 });
 
 clearButton.addEventListener('click', () => {
-  painsInput.value = '';
-  howInput.value = '';
-  scenariosInput.value = '';
-  integrationInput.value = '';
-  featuresInput.value = '';
-  techSpecsInput.value = '';
-  kpisInput.value = '';
+  SECTION_DEFINITIONS.forEach((section) => setEditorHtml(section.key, ''));
   setMessage('현재 카드 입력값을 비웠습니다. 저장 버튼을 누르면 반영됩니다.', false);
 });
 
@@ -226,9 +410,39 @@ cardSelect.addEventListener('change', () => {
   setMessage('');
 });
 
+form.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-editor-action]');
+  if (!button) return;
+
+  const action = button.getAttribute('data-editor-action');
+  const sectionKey = button.getAttribute('data-section');
+  if (!action || !sectionKey) return;
+
+  if (action === 'toggle-source') {
+    toggleSourcePanel(sectionKey);
+    return;
+  }
+  if (action === 'apply-source') {
+    applySourceToEditor(sectionKey);
+    return;
+  }
+  if (action === 'insert-image') {
+    insertTemplate(sectionKey, buildImageSnippet());
+    return;
+  }
+  if (action === 'insert-video') {
+    insertTemplate(sectionKey, buildVideoSnippet());
+    return;
+  }
+  if (action === 'insert-table') {
+    insertTemplate(sectionKey, buildTableSnippet());
+  }
+});
+
 (async function init() {
   try {
     buildCardOptions();
+    createEditorBindings();
     overrideState = await fetchOverrideState();
     fillFormByCard();
   } catch (error) {

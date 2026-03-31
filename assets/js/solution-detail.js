@@ -29,7 +29,9 @@ function getGroupLabel(group) {
 }
 
 function resolveMediaPath(src) {
-  const value = String(src || '').trim();
+  const value = String(src || '')
+    .trim()
+    .replace(/((?:\.\.\/|\.\/)?assets\/media\/[^?#]+)\.(png|jpg|jpeg)(?=([?#].*)?$)/i, '$1.webp');
   if (!value) return '';
 
   if (/^(https?:|data:|blob:)/i.test(value)) return value;
@@ -117,6 +119,13 @@ function normalizeDetailOverride(value) {
   if (!value || typeof value !== 'object') return null;
 
   const normalized = {};
+  ['intentHtml', 'architectureHtml', 'referenceHtml'].forEach((key) => {
+    const raw = String(value[key] || '').trim();
+    if (raw) {
+      normalized[key] = raw;
+    }
+  });
+
   ['pains', 'how', 'scenarios', 'integration', 'features'].forEach((key) => {
     if (Array.isArray(value[key]) && value[key].length > 0) {
       normalized[key] = value[key].map((item) => String(item || '').trim()).filter(Boolean);
@@ -132,6 +141,118 @@ function normalizeDetailOverride(value) {
   }
 
   return Object.keys(normalized).length ? normalized : null;
+}
+
+function hasMeaningfulHtml(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return false;
+
+  if (/(<img|<video|<audio|<iframe|<table|<figure|<ul|<ol|<li|<blockquote|<pre|<code|<h[1-6]|<hr)/i.test(raw)) {
+    return true;
+  }
+
+  const normalized = raw
+    .replace(/<p><br><\/p>/gi, '')
+    .replace(/<br\s*\/?>/gi, '')
+    .replace(/&nbsp;/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .trim();
+
+  return Boolean(normalized);
+}
+
+function createListBlockHtml(title, items) {
+  if (!Array.isArray(items) || !items.length) return '';
+  return `<section><h3>${esc(title)}</h3><ul>${items.map((item) => `<li>${esc(item)}</li>`).join('')}</ul></section>`;
+}
+
+function createTechSpecHtml(techSpecs) {
+  if (!Array.isArray(techSpecs) || !techSpecs.length) return '';
+  return `
+    <section>
+      <h3>기술 스펙</h3>
+      <div class="rich-grid-2">
+        ${techSpecs
+          .map(
+            (spec) => `
+              <article class="rich-card">
+                <h4>${esc(spec?.title || '')}</h4>
+                <ul>${(Array.isArray(spec?.items) ? spec.items : []).map((item) => `<li>${esc(item)}</li>`).join('')}</ul>
+              </article>
+            `
+          )
+          .join('')}
+      </div>
+    </section>
+  `;
+}
+
+function createKpiHtml(kpis) {
+  if (!Array.isArray(kpis) || !kpis.length) return '';
+  return `
+    <section>
+      <h3>KPI</h3>
+      <div class="rich-grid-3">
+        ${kpis
+          .map(
+            (kpi) => `
+              <article class="rich-card">
+                <p class="rich-kpi">${esc(kpi?.value || '')}</p>
+                <h4>${esc(kpi?.title || '')}</h4>
+                <p>${esc(kpi?.desc || '')}</p>
+              </article>
+            `
+          )
+          .join('')}
+      </div>
+    </section>
+  `;
+}
+
+function buildLegacyDetailSections(source, card, groupText) {
+  const current = source && typeof source === 'object' ? source : {};
+  const painItems = current.pains || groupText.pains;
+  const featureItems = current.features || card.features || [];
+  const howItems = current.how || groupText.how;
+  const integrationItems = current.integration || groupText.integration;
+  const scenarioItems = current.scenarios || groupText.scenarios;
+
+  return {
+    intentHtml: [createListBlockHtml('문제 정의', painItems), createListBlockHtml('핵심 기능', featureItems)].filter(Boolean).join(''),
+    architectureHtml: [
+      createListBlockHtml('해결 방식', howItems),
+      createListBlockHtml('기술 연동', integrationItems),
+      createTechSpecHtml(current.techSpecs),
+    ]
+      .filter(Boolean)
+      .join(''),
+    referenceHtml: [createListBlockHtml('적용 시나리오', scenarioItems), createKpiHtml(current.kpis)].filter(Boolean).join(''),
+  };
+}
+
+function resolveDetailSections(override, card, groupText) {
+  const legacy = buildLegacyDetailSections(override, card, groupText);
+  const direct = {
+    intentHtml: hasMeaningfulHtml(override?.intentHtml) ? String(override.intentHtml).trim() : '',
+    architectureHtml: hasMeaningfulHtml(override?.architectureHtml) ? String(override.architectureHtml).trim() : '',
+    referenceHtml: hasMeaningfulHtml(override?.referenceHtml) ? String(override.referenceHtml).trim() : '',
+  };
+
+  return {
+    intentHtml: direct.intentHtml || legacy.intentHtml,
+    architectureHtml: direct.architectureHtml || legacy.architectureHtml,
+    referenceHtml: direct.referenceHtml || legacy.referenceHtml,
+  };
+}
+
+function renderRichDetailSection(title, html) {
+  if (!hasMeaningfulHtml(html)) return '';
+  return `
+    <section class="section rich-section">
+      <h2>${esc(title)}</h2>
+      <div class="rich-section-body">${html}</div>
+    </section>
+  `;
 }
 
 async function getSupabaseDetailOverrideByCardId(cardId) {
@@ -477,53 +598,21 @@ async function render() {
   const localOverride = detailOverridesById[card.id] || null;
   const override = remoteOverride || localOverride;
 
-  const featureItems = override?.features || card.features || [];
-  const painItems = override?.pains || groupText.pains;
-  const howItems = override?.how || groupText.how;
-  const scenarioItems = override?.scenarios || groupText.scenarios;
-  const integrationItems = override?.integration || groupText.integration;
+  const detailSections = resolveDetailSections(override, card, groupText);
   const overrideMedia = normalizeMediaItems(override?.media || []);
   const cardMedia = normalizeMediaItems(card.media || []);
   const supabaseMedia = await getSupabaseMediaItemsByCardId(card.id);
   const sourceLibraryMedia = getSourceLibraryMediaItemsByCardId(card.id);
   const localDraftMedia = getLocalDraftMediaItemsByCardId(card.id);
-  const mediaItems = supabaseMedia.length
+  const mediaItems = localDraftMedia.length
+    ? localDraftMedia
+    : supabaseMedia.length
     ? supabaseMedia
     : sourceLibraryMedia.length
     ? sourceLibraryMedia
-    : localDraftMedia.length
-    ? localDraftMedia
     : overrideMedia.length
     ? overrideMedia
     : cardMedia;
-
-  const features = featureItems.map((item) => `<li>${esc(item)}</li>`).join('');
-  const pains = painItems.map((item) => `<li>${esc(item)}</li>`).join('');
-  const how = howItems.map((item) => `<li>${esc(item)}</li>`).join('');
-  const scenarios = scenarioItems.map((item) => `<li>${esc(item)}</li>`).join('');
-  const integrations = integrationItems.map((item) => `<li>${esc(item)}</li>`).join('');
-
-  const techSpecSection = override?.techSpecs
-    ? `<section class="section">
-        <h2>기술 스펙</h2>
-        <div class="grid-2">
-          ${override.techSpecs
-            .map(
-              (spec) => `<article class="card"><h3>${esc(spec.title)}</h3><ul>${(spec.items || [])
-                .map((item) => `<li>${esc(item)}</li>`)
-                .join('')}</ul></article>`
-            )
-            .join('')}
-        </div>
-      </section>`
-    : '';
-
-  const kpiData =
-    override?.kpis || [
-      { value: '+32%', title: '운영 효율 개선', desc: '자동화된 처리 흐름으로 운영 효율 향상' },
-      { value: '-27%', title: '대기시간 단축', desc: '핵심 동선 개선과 자동 안내로 지연 최소화' },
-      { value: '99.9%', title: '안정적 운영', desc: '표준 운영 정책 기반의 고가용성 서비스' },
-    ];
 
   const related = cards
     .filter((item) => item.enabled !== false && item.group === card.group && item.id !== card.id)
@@ -556,59 +645,13 @@ async function render() {
       </aside>
     </section>
 
-    <section class="section">
-      <h2>문제 정의</h2>
-      <ul>${pains}</ul>
-    </section>
+    ${renderRichDetailSection('개발의도 / 필요성 / 개념', detailSections.intentHtml)}
 
-    <section class="section grid-2">
-      <article class="card">
-        <h3>해결 방식</h3>
-        <ul>${how}</ul>
-      </article>
-      <article class="card">
-        <h3>핵심 기능</h3>
-        <ul>${features}</ul>
-      </article>
-    </section>
+    ${renderRichDetailSection('아키텍처 / 시스템구성 / 동작원리', detailSections.architectureHtml)}
 
-    <section class="section grid-2">
-      <article class="card">
-        <h3>적용 시나리오</h3>
-        <ul>${scenarios}</ul>
-      </article>
-      <article class="card">
-        <h3>기술 연동</h3>
-        <ul>${integrations}</ul>
-      </article>
-    </section>
+    ${renderRichDetailSection('레퍼런스 / 관련자료', detailSections.referenceHtml)}
 
     ${renderMediaSection(mediaItems)}
-
-    ${techSpecSection}
-
-    <section class="section">
-      <h2>KPI</h2>
-      <div class="grid-3">
-        ${kpiData
-          .map(
-            (kpi) => `<article class="card"><p class="kpi">${esc(kpi.value)}</p><h3>${esc(kpi.title)}</h3><p>${esc(
-              kpi.desc
-            )}</p></article>`
-          )
-          .join('')}
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>도입 절차</h2>
-      <div class="grid-2">
-        <article class="card"><h3>1. 진단</h3><p>운영 환경 및 목표 KPI 정의</p></article>
-        <article class="card"><h3>2. 파일럿</h3><p>핵심 기능 검증 및 성능 측정</p></article>
-        <article class="card"><h3>3. 확장</h3><p>다지점/대규모 환경 단계적 배포</p></article>
-        <article class="card"><h3>4. 안정화</h3><p>관제, 대응, 운영 정책 정착</p></article>
-      </div>
-    </section>
 
     <div class="section-cta">
       <a class="btn primary" href="${inquiryFormUrl}" data-inquiry-trigger aria-haspopup="dialog" aria-controls="inquiry-modal">도입 문의</a>

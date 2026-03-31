@@ -167,6 +167,124 @@ h1 {
   margin-bottom: 10px;
 }
 
+.rich-section-body {
+  display: grid;
+  gap: 16px;
+}
+
+.rich-section-body > * {
+  margin: 0;
+}
+
+.rich-section-body h3,
+.rich-section-body h4 {
+  margin: 0 0 10px;
+  color: var(--text);
+}
+
+.rich-section-body p,
+.rich-section-body li,
+.rich-section-body td,
+.rich-section-body th,
+.rich-section-body figcaption,
+.rich-section-body blockquote {
+  color: var(--muted);
+}
+
+.rich-section-body ul,
+.rich-section-body ol {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+.rich-section-body figure {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.rich-section-body img,
+.rich-section-body video,
+.rich-section-body iframe {
+  max-width: 100%;
+  display: block;
+  border: 1px solid var(--line);
+  background: #0e1722;
+}
+
+.rich-section-body video,
+.rich-section-body iframe {
+  width: 100%;
+}
+
+.rich-section-body table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+}
+
+.rich-section-body th,
+.rich-section-body td {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.rich-section-body th {
+  color: var(--text);
+  background: #f8fbff;
+}
+
+.rich-section-body blockquote {
+  margin: 0;
+  padding: 14px 16px;
+  border-left: 4px solid var(--brand);
+  background: #f8fbff;
+}
+
+.rich-section-body pre,
+.rich-section-body code {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.rich-section-body pre {
+  margin: 0;
+  padding: 12px 14px;
+  background: #0f1722;
+  color: #e8eef6;
+  overflow-x: auto;
+}
+
+.rich-grid-2,
+.rich-grid-3 {
+  display: grid;
+  gap: 10px;
+}
+
+.rich-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rich-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.rich-card {
+  border: 1px solid var(--line);
+  padding: 12px;
+  background: #fff;
+}
+
+.rich-kpi {
+  font-family: "Manrope", sans-serif;
+  font-size: 1.35rem;
+  color: #111;
+  margin: 0 0 6px;
+}
+
 .grid-3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -492,7 +610,9 @@ body.inquiry-modal-open {
 @media (max-width: 900px) {
   .hero,
   .grid-3,
-  .grid-2 {
+  .grid-3,
+  .rich-grid-2,
+  .rich-grid-3 {
     grid-template-columns: 1fr;
   }
 

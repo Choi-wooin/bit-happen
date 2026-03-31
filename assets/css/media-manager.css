@@ -200,12 +200,23 @@ select {
   min-width: 0;
 }
 
+.url-section .hint[data-state='connected'] {
+  color: #117a37;
+}
+
+.url-section .hint[data-state='warning'] {
+  color: #a15a00;
+}
+
 .url-preview {
   border: 1px dashed var(--line);
   background: #fff;
   min-height: 88px;
   padding: 8px;
   min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .url-preview .media-item {
