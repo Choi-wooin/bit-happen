@@ -1198,13 +1198,93 @@ function restoreMediaSizingToHtml(html) {
   return wrapper.innerHTML;
 }
 
+function convertOembedToIframes(html) {
+  const raw = String(html || '').trim();
+  if (!raw) return raw;
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = raw;
+
+  // Handle <oembed url="..."> (CKEditor non-preview output)
+  const oembeds = Array.from(wrapper.querySelectorAll('oembed[url]'));
+  oembeds.forEach((oembed) => {
+    const url = String(oembed.getAttribute('url') || '').trim();
+    if (!url) return;
+
+    const embedSrc = extractEmbedSrc(url);
+    if (!embedSrc) return;
+
+    const parentFigure = oembed.closest('figure.media');
+    const iframe = buildIframeFromFigure(embedSrc, parentFigure);
+
+    if (parentFigure) {
+      parentFigure.replaceWith(iframe);
+    } else {
+      oembed.replaceWith(iframe);
+    }
+  });
+
+  // Handle CKEditor previewsInData output: <figure class="media"><div data-oembed-url="...">...</div></figure>
+  const oembedDivs = Array.from(wrapper.querySelectorAll('figure.media > div[data-oembed-url]'));
+  oembedDivs.forEach((div) => {
+    const url = String(div.getAttribute('data-oembed-url') || '').trim();
+    if (!url) return;
+
+    const embedSrc = extractEmbedSrc(url);
+    if (!embedSrc) return;
+
+    const parentFigure = div.closest('figure.media');
+    const iframe = buildIframeFromFigure(embedSrc, parentFigure);
+
+    if (parentFigure) {
+      parentFigure.replaceWith(iframe);
+    } else {
+      div.replaceWith(iframe);
+    }
+  });
+
+  return wrapper.innerHTML;
+}
+
+function extractEmbedSrc(url) {
+  const ytWatch = url.match(/youtube\.com\/watch\?v=([^&#]+)/i) || url.match(/youtu\.be\/([^?&#]+)/i);
+  if (ytWatch) return 'https://www.youtube.com/embed/' + ytWatch[1];
+
+  const ytEmbed = url.match(/youtube\.com\/embed\/([^?&#]+)/i);
+  if (ytEmbed) return 'https://www.youtube.com/embed/' + ytEmbed[1];
+
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/i);
+  if (vimeoMatch) return 'https://player.vimeo.com/video/' + vimeoMatch[1];
+
+  return '';
+}
+
+function buildIframeFromFigure(embedSrc, parentFigure) {
+  const figureStyle = parentFigure ? parentFigure.getAttribute('style') || '' : '';
+  const pcHeightMatch = figureStyle.match(/--detail-media-height-pc:\s*(\d+)px/);
+  const pcWidthMatch = figureStyle.match(/--detail-iframe-width:\s*(\d+)px/);
+  const height = pcHeightMatch ? pcHeightMatch[1] : '450';
+  const width = pcWidthMatch ? pcWidthMatch[1] : null;
+
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('width', width || '100%');
+  iframe.setAttribute('height', height);
+  iframe.setAttribute('src', embedSrc);
+  iframe.setAttribute('frameborder', '0');
+  iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+  iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+  iframe.setAttribute('allowfullscreen', '');
+  return iframe;
+}
+
 function syncSourceFromEditor(sectionKey) {
   const binding = getEditorBinding(sectionKey);
   if (!binding) return;
   cacheMediaSizingFromHtml(binding.sourceInput.value);
   const editorOutput = getEditorHtml(sectionKey);
   const restored = restoreMediaSizingToHtml(editorOutput);
-  binding.sourceInput.value = formatHtmlForSource(restored);
+  const withIframes = convertOembedToIframes(restored);
+  binding.sourceInput.value = formatHtmlForSource(withIframes);
   updatePreview(sectionKey, binding.sourceInput.value);
 }
 
@@ -1459,6 +1539,51 @@ function convertVideosToEditorEmbeds(html) {
     embed.setAttribute('url', editorUrl);
     embedFigure.appendChild(embed);
     video.replaceWith(embedFigure);
+  });
+
+  // Convert YouTube/Vimeo iframes to oembed so CKEditor can render them
+  const iframes = Array.from(wrapper.querySelectorAll('iframe'));
+  iframes.forEach((iframe) => {
+    // Skip iframes already inside CKEditor media figures (preview wrappers or oembed)
+    if (iframe.closest('figure.media')) return;
+
+    const src = String(iframe.getAttribute('src') || '').trim();
+    if (!src) return;
+
+    // Extract the watchable URL from embed URL
+    let watchUrl = '';
+    const ytMatch = src.match(/youtube\.com\/embed\/([^?&#]+)/i);
+    if (ytMatch) {
+      watchUrl = 'https://www.youtube.com/watch?v=' + ytMatch[1];
+    }
+    const vimeoMatch = src.match(/player\.vimeo\.com\/video\/([^?&#]+)/i);
+    if (!watchUrl && vimeoMatch) {
+      watchUrl = 'https://vimeo.com/' + vimeoMatch[1];
+    }
+    if (!watchUrl) {
+      // For other iframes, keep as-is (GHS will preserve them)
+      return;
+    }
+
+    const embedFigure = document.createElement('figure');
+    embedFigure.className = 'media';
+    const height = iframe.getAttribute('height') || iframe.style.height;
+    const width = iframe.getAttribute('width') || iframe.style.width;
+    const styleParts = [];
+    if (height) styleParts.push('--detail-media-height-pc: ' + (String(height).replace(/px$/, '')) + 'px');
+    if (width && width !== '100%') styleParts.push('--detail-iframe-width: ' + (String(width).replace(/px$/, '')) + 'px');
+    if (styleParts.length) embedFigure.setAttribute('style', styleParts.join('; ') + ';');
+    const oembed = document.createElement('oembed');
+    oembed.setAttribute('url', watchUrl);
+    embedFigure.appendChild(oembed);
+
+    // Replace parent figure if iframe is inside one, otherwise replace iframe directly
+    const parentFigure = iframe.closest('figure');
+    if (parentFigure) {
+      parentFigure.replaceWith(embedFigure);
+    } else {
+      iframe.replaceWith(embedFigure);
+    }
   });
 
   return wrapper.innerHTML;
