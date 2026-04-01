@@ -245,12 +245,69 @@ function resolveDetailSections(override, card, groupText) {
   };
 }
 
+function convertOembedToIframes(html) {
+  var raw = String(html || '').trim();
+  if (!raw) return raw;
+  if (raw.indexOf('oembed') === -1 && raw.indexOf('data-oembed-url') === -1) return raw;
+
+  var wrapper = document.createElement('div');
+  wrapper.innerHTML = raw;
+
+  function extractEmbedSrc(url) {
+    var m = url.match(/youtube\.com\/watch\?v=([^&#]+)/i) || url.match(/youtu\.be\/([^?&#]+)/i);
+    if (m) return 'https://www.youtube.com/embed/' + m[1];
+    m = url.match(/youtube\.com\/embed\/([^?&#]+)/i);
+    if (m) return 'https://www.youtube.com/embed/' + m[1];
+    m = url.match(/vimeo\.com\/(\d+)/i);
+    if (m) return 'https://player.vimeo.com/video/' + m[1];
+    return '';
+  }
+
+  function buildIframe(embedSrc, figureEl) {
+    var style = figureEl ? figureEl.getAttribute('style') || '' : '';
+    var hm = style.match(/--detail-media-height-pc:\s*(\d+)px/);
+    var wm = style.match(/--detail-iframe-width:\s*(\d+)px/);
+    var h = hm ? hm[1] : '450';
+    var w = wm ? wm[1] : null;
+    var iframe = document.createElement('iframe');
+    iframe.setAttribute('width', w || '100%');
+    iframe.setAttribute('height', h);
+    iframe.setAttribute('src', embedSrc);
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+    iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    iframe.setAttribute('allowfullscreen', '');
+    return iframe;
+  }
+
+  // Handle <oembed url="...">
+  Array.from(wrapper.querySelectorAll('oembed[url]')).forEach(function (el) {
+    var src = extractEmbedSrc(el.getAttribute('url') || '');
+    if (!src) return;
+    var fig = el.closest('figure.media');
+    var iframe = buildIframe(src, fig);
+    (fig || el).replaceWith(iframe);
+  });
+
+  // Handle CKEditor previewsInData: <figure class="media"><div data-oembed-url="...">
+  Array.from(wrapper.querySelectorAll('figure.media > div[data-oembed-url]')).forEach(function (el) {
+    var src = extractEmbedSrc(el.getAttribute('data-oembed-url') || '');
+    if (!src) return;
+    var fig = el.closest('figure.media');
+    var iframe = buildIframe(src, fig);
+    (fig || el).replaceWith(iframe);
+  });
+
+  return wrapper.innerHTML;
+}
+
 function renderRichDetailSection(title, html) {
   if (!hasMeaningfulHtml(html)) return '';
+  var processed = convertOembedToIframes(html);
   return `
     <section class="section rich-section">
       <h2>${esc(title)}</h2>
-      <div class="rich-section-body">${html}</div>
+      <div class="rich-section-body">${processed}</div>
     </section>
   `;
 }
