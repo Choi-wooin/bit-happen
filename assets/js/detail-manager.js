@@ -1691,6 +1691,12 @@ async function createEditorBindings() {
               styles: true,
               attributes: true,
             },
+            {
+              name: 'iframe',
+              classes: true,
+              styles: true,
+              attributes: true,
+            },
           ],
         },
         mediaEmbed: {
