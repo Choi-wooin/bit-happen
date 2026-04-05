@@ -52,9 +52,9 @@
                 aria-haspopup="true"
                 aria-controls="business-submenu"
               >
-                대표 솔루션
+                솔루션
               </button>
-              <div class="mega-menu" id="business-submenu" role="menu" aria-label="사업분야 하위메뉴">
+              <div class="mega-menu" id="business-submenu" role="menu" aria-label="솔루션 하위메뉴">
                 <ul class="submenu-list">
                   <li><a href="#plans" data-group="all" role="menuitem">전체</a></li>
                   <li><a href="#plans" data-group="kiosk" role="menuitem">Kiosk</a></li>
@@ -217,17 +217,25 @@
       </section>
 
       <section class="container" id="plans">
-        <div class="section-head">
-          <h2>대표 솔루션</h2>
+        <div class="section-head between">
+          <h2>솔루션</h2>
+          <label class="solution-toggle" aria-label="솔루션 보기 범위">
+            <span class="toggle-label" data-mode="featured">Core</span>
+            <input type="checkbox" id="solution-mode-toggle" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span class="toggle-label" data-mode="all">All Solution</span>
+          </label>
         </div>
 
-        <div class="segment-control" role="tablist" aria-label="사업영역 필터">
-          <button class="segment active" data-group="all" aria-selected="true">전체</button>
-          <button class="segment" data-group="kiosk" aria-selected="false">Kiosk</button>
-          <button class="segment" data-group="ai" aria-selected="false">AI</button>
-          <button class="segment" data-group="airport" aria-selected="false">Airport</button>
-          <button class="segment" data-group="device-interface" aria-selected="false">Device interface</button>
-          <button class="segment" data-group="product" aria-selected="false">Product</button>
+        <div class="solution-toolbar">
+          <div class="segment-control" role="tablist" aria-label="솔루션 분야 필터">
+            <button class="segment active" data-group="all" aria-selected="true">전체</button>
+            <button class="segment" data-group="kiosk" aria-selected="false">Kiosk</button>
+            <button class="segment" data-group="ai" aria-selected="false">AI</button>
+            <button class="segment" data-group="airport" aria-selected="false">Airport</button>
+            <button class="segment" data-group="device-interface" aria-selected="false">Device interface</button>
+            <button class="segment" data-group="product" aria-selected="false">Product</button>
+          </div>
         </div>
 
         <div class="plan-grid" id="plan-grid"></div>

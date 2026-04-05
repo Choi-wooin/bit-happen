@@ -672,6 +672,7 @@
     return {
       id: String(card.id || `card-${Date.now()}`),
       enabled: card.enabled !== false,
+      featured: card.featured === true,
       group: groups[0],
       groups,
       badge: card.badge || 'Package',

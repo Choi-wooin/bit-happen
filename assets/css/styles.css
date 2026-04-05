@@ -789,6 +789,65 @@ h2 {
   color: var(--brand);
 }
 
+.solution-toolbar {
+  display: grid;
+  gap: 10px;
+}
+
+/* --- Solution toggle switch (next to title) --- */
+.solution-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.solution-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #999;
+  transition: color 0.25s;
+}
+
+.toggle-label[data-mode="featured"] {
+  color: #121212;
+}
+
+.toggle-track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  background: #121212;
+  border-radius: 11px;
+  transition: background 0.25s;
+  flex-shrink: 0;
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.25s;
+}
+
+.solution-toggle input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(18px);
+}
+/* --- end toggle --- */
+
 .segment-control {
   display: flex;
   width: 100%;
@@ -796,7 +855,7 @@ h2 {
   justify-content: flex-start;
   box-sizing: border-box;
   padding: 5px;
-  border-radius: 0;
+  border-radius: 5px;
   border: 1px solid var(--line);
   background: #fff;
   gap: 4px;
@@ -805,8 +864,8 @@ h2 {
 .segment {
   background: transparent;
   border: 0;
-  border-radius: 0;
-  padding: 8px 14px;
+  border-radius: 20px;
+  padding: 4px 14px;
   font-weight: 700;
   color: #585d63;
   cursor: pointer;
@@ -1429,6 +1488,7 @@ body.inquiry-modal-open {
     -webkit-overflow-scrolling: touch;
   }
 
+
   .segment-control::-webkit-scrollbar {
     display: none;
   }
@@ -1436,7 +1496,7 @@ body.inquiry-modal-open {
   .segment {
     border: 0;
     flex: 0 0 auto;
-    padding: 5px 8px;
+    padding: 3px 8px;
     min-width: 0;
     white-space: nowrap;
     font-size: 0.76rem;
@@ -1623,6 +1683,20 @@ body.inquiry-modal-open {
   .contact {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  #plans .section-head.between {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .solution-toggle {
+    margin-left: 0;
+  }
+
+  .toggle-label {
+    font-size: 0.8rem;
   }
 
   .inquiry-modal__dialog {

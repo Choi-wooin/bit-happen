@@ -22,6 +22,7 @@ const fields = {
   ctaLabel: document.getElementById('cta-label'),
   ctaStyle: document.getElementById('cta-style'),
   enabled: document.getElementById('enabled'),
+  featured: document.getElementById('featured'),
 };
 
 const GROUP_LABELS = {
@@ -137,6 +138,7 @@ function clearForm() {
   fields.ctaLabel.value = '상세보기';
   fields.ctaStyle.value = 'primary';
   fields.enabled.checked = true;
+  fields.featured.checked = false;
 }
 
 function parseLines(value) {
@@ -168,6 +170,7 @@ function fillForm(card) {
   fields.ctaLabel.value = card.ctaLabel || '상세보기';
   fields.ctaStyle.value = card.ctaStyle || 'primary';
   fields.enabled.checked = card.enabled !== false;
+  fields.featured.checked = card.featured === true;
 }
 
 async function toggleEnabled(id) {
@@ -216,7 +219,7 @@ function renderList() {
         <h3>${card.title}</h3>
         <strong>P${card.priority}</strong>
       </div>
-      <p class="item-meta">${groups.map((group) => getGroupLabel(group)).join(', ')} | ${card.badge} | ${card.span}칸 | ${card.enabled === false ? '비노출' : '노출'}</p>
+      <p class="item-meta">${groups.map((group) => getGroupLabel(group)).join(', ')} | ${card.badge} | ${card.span}칸 | ${card.enabled === false ? '비노출' : '노출'} | ${card.featured === true ? '대표' : '일반'}</p>
       <div class="item-actions">
         <button type="button" data-action="edit">편집</button>
         <button type="button" data-action="up">우선순위 +</button>
@@ -270,6 +273,7 @@ form.addEventListener('submit', async (event) => {
     ctaLabel: fields.ctaLabel.value.trim() || '상세보기',
     ctaStyle: fields.ctaStyle.value,
     enabled: fields.enabled.checked,
+    featured: fields.featured.checked,
   };
 
   let next;

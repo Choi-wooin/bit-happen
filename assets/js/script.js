@@ -6,7 +6,11 @@ const planGrid = document.getElementById('plan-grid');
 const viewportDebug = document.getElementById('viewport-debug');
 
 const segments = document.querySelectorAll('.segment');
+const groupSegments = document.querySelectorAll('.segment[data-group]');
+const solutionModeToggle = document.getElementById('solution-mode-toggle');
+const toggleLabels = document.querySelectorAll('.toggle-label');
 let activeGroup = 'all';
+let activeSolutionMode = 'featured';
 let mediaLibraryCache = null;
 const tabletMediaQuery = window.matchMedia('(min-width: 600px) and (max-width: 1023px)');
 const inquiryFormUrl = 'https://tally.so/r/oboZNx';
@@ -22,6 +26,7 @@ const GROUP_LABELS = {
   all: 'Enterprise',
 };
 let megaCloseTimer = null;
+const REPRESENTATIVE_LIMIT_PER_GROUP = 2;
 
 function getViewportBreakpointLabel(width) {
   if (width <= 599) return 'Phone <= 599px';
@@ -63,6 +68,29 @@ function getGroupLabel(group) {
 function matchesGroupFilter(card, group) {
   const groups = getCardGroups(card);
   return group === 'all' || groups.includes(group) || groups.includes('all');
+}
+
+function getCardsBySolutionMode(cards, mode = activeSolutionMode) {
+  if (mode !== 'featured') {
+    return cards.slice();
+  }
+
+  const explicitFeaturedCards = cards.filter((card) => card.featured === true);
+  if (explicitFeaturedCards.length) {
+    return explicitFeaturedCards;
+  }
+
+  const groupCounts = new Map();
+
+  return cards.filter((card) => {
+    const primaryGroup = getPrimaryGroup(card);
+    const currentCount = groupCounts.get(primaryGroup) || 0;
+    if (currentCount >= REPRESENTATIVE_LIMIT_PER_GROUP) {
+      return false;
+    }
+    groupCounts.set(primaryGroup, currentCount + 1);
+    return true;
+  });
 }
 
 function resolveMediaPath(src) {
@@ -233,15 +261,17 @@ function adjustTabletLeadThumbs() {
   });
 }
 
-async function renderPlanCards(group = 'all') {
+async function renderPlanCards(group = activeGroup, mode = activeSolutionMode) {
   activeGroup = group;
+  activeSolutionMode = mode;
   if (!planGrid || !window.BitHappenCardStore) {
     return;
   }
 
   const cards = window.BitHappenCardStore.getCards();
   const mediaItems = await getMediaLibraryItems();
-  const visibleCards = cards.filter((card) => card.enabled !== false && matchesGroupFilter(card, group));
+  const scopedCards = cards.filter((card) => card.enabled !== false && matchesGroupFilter(card, group));
+  const visibleCards = getCardsBySolutionMode(scopedCards, mode);
 
   planGrid.innerHTML = '';
 
@@ -405,6 +435,7 @@ if (megaHost && megaTrigger) {
       return;
     }
 
+    setSolutionMode('featured');
     activatePlanGroup('all');
   });
 
@@ -564,9 +595,27 @@ document.querySelectorAll('.nav a[data-group]').forEach((link) => {
   });
 });
 
-segments.forEach((segment) => {
+function setGroupSegment(group) {
+  groupSegments.forEach((segment) => {
+    const isActive = segment.dataset.group === group;
+    segment.classList.toggle('active', isActive);
+    segment.setAttribute('aria-selected', String(isActive));
+  });
+}
+
+function setSolutionMode(mode = 'featured') {
+  activeSolutionMode = mode === 'all' ? 'all' : 'featured';
+  if (solutionModeToggle) {
+    solutionModeToggle.checked = activeSolutionMode === 'all';
+  }
+  toggleLabels.forEach((lbl) => {
+    lbl.style.color = lbl.dataset.mode === activeSolutionMode ? '#121212' : '#999';
+  });
+}
+
+groupSegments.forEach((segment) => {
   segment.addEventListener('click', () => {
-    segments.forEach((s) => {
+    groupSegments.forEach((s) => {
       s.classList.remove('active');
       s.setAttribute('aria-selected', 'false');
     });
@@ -574,13 +623,20 @@ segments.forEach((segment) => {
     segment.classList.add('active');
     segment.setAttribute('aria-selected', 'true');
 
-    renderPlanCards(segment.dataset.group);
+    renderPlanCards(segment.dataset.group, activeSolutionMode);
   });
 });
 
+if (solutionModeToggle) {
+  solutionModeToggle.addEventListener('change', () => {
+    setSolutionMode(solutionModeToggle.checked ? 'all' : 'featured');
+    renderPlanCards(activeGroup, activeSolutionMode);
+  });
+}
+
 window.addEventListener('bitHappenCardsUpdated', () => {
   mediaLibraryCache = null;
-  renderPlanCards(activeGroup);
+  renderPlanCards(activeGroup, activeSolutionMode);
 });
 
 window.addEventListener('resize', () => {
@@ -604,4 +660,6 @@ revealElements.forEach((el) => observer.observe(el));
 
 bindInquiryTriggers();
 updateViewportDebug();
-renderPlanCards('all');
+setGroupSegment('all');
+setSolutionMode('featured');
+renderPlanCards('all', 'featured');
