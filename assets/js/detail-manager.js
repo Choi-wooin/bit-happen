@@ -556,6 +556,14 @@ function convertLegacyOverrideToSections(value) {
   };
 }
 
+function hasOwnSectionKey(source, key) {
+  return Boolean(source && typeof source === 'object' && Object.prototype.hasOwnProperty.call(source, key));
+}
+
+function hasDirectSectionOverride(source) {
+  return SECTION_DEFINITIONS.some((section) => hasOwnSectionKey(source, section.key));
+}
+
 function getCurrentSectionContent(source) {
   if (!source || typeof source !== 'object') {
     return { intentHtml: '', architectureHtml: '', referenceHtml: '' };
@@ -567,7 +575,7 @@ function getCurrentSectionContent(source) {
     referenceHtml: normalizeRichHtml(source.referenceHtml),
   };
 
-  if (direct.intentHtml || direct.architectureHtml || direct.referenceHtml) {
+  if (hasDirectSectionOverride(source)) {
     return direct;
   }
 
@@ -1409,9 +1417,7 @@ function buildOverridePayload() {
   const payload = {};
   SECTION_DEFINITIONS.forEach((section) => {
     const html = normalizeRichHtml(getSectionSourceHtml(section.key) || getEditorHtml(section.key));
-    if (html) {
-      payload[section.key] = html;
-    }
+    payload[section.key] = html;
   });
   return payload;
 }
@@ -1900,12 +1906,7 @@ async function handleDetailSave() {
   try {
     const payload = buildOverridePayload();
     const next = { ...overrideState };
-
-    if (Object.keys(payload).length === 0) {
-      delete next[cardId];
-    } else {
-      next[cardId] = payload;
-    }
+    next[cardId] = payload;
 
     await saveOverrideState(next);
     overrideState = next;

@@ -13,6 +13,15 @@ const inquiryFormUrl = 'https://tally.so/r/oboZNx';
 const inquiryEmbedUrl = 'https://tally.so/embed/oboZNx?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1';
 let inquiryModalState = null;
 const LOCAL_MEDIA_LIBRARY_KEY = 'bitHappenMediaLibrary_v1';
+const GROUP_LABELS = {
+  kiosk: 'Kiosk',
+  ai: 'AI',
+  airport: 'Airport',
+  'device-interface': 'Device interface',
+  product: 'Product',
+  all: 'Enterprise',
+};
+let megaCloseTimer = null;
 
 function getViewportBreakpointLabel(width) {
   if (width <= 599) return 'Phone <= 599px';
@@ -33,6 +42,27 @@ function escapeHtml(value) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function getCardGroups(card) {
+  return window.BitHappenCardStore?.getCardGroups
+    ? window.BitHappenCardStore.getCardGroups(card)
+    : [String(card?.group || 'all').trim() || 'all'];
+}
+
+function getPrimaryGroup(card) {
+  return window.BitHappenCardStore?.getPrimaryGroup
+    ? window.BitHappenCardStore.getPrimaryGroup(card)
+    : getCardGroups(card)[0] || 'all';
+}
+
+function getGroupLabel(group) {
+  return GROUP_LABELS[group] || String(group || '').trim() || 'Package';
+}
+
+function matchesGroupFilter(card, group) {
+  const groups = getCardGroups(card);
+  return group === 'all' || groups.includes(group) || groups.includes('all');
 }
 
 function resolveMediaPath(src) {
@@ -211,22 +241,23 @@ async function renderPlanCards(group = 'all') {
 
   const cards = window.BitHappenCardStore.getCards();
   const mediaItems = await getMediaLibraryItems();
-  const visibleCards = cards.filter(
-    (card) => card.enabled !== false && (group === 'all' || card.group === group || card.group === 'all')
-  );
+  const visibleCards = cards.filter((card) => card.enabled !== false && matchesGroupFilter(card, group));
 
   planGrid.innerHTML = '';
 
   visibleCards.forEach((card) => {
     const article = document.createElement('article');
     const span = Math.max(1, Math.min(4, Number(card.span) || 1));
+    const groups = getCardGroups(card);
+    const primaryGroup = getPrimaryGroup(card);
 
     article.className = `plan-card span-${span}`;
     if (card.span >= 2) {
       article.classList.add('wide');
     }
     article.classList.add('plan-card-clickable');
-    article.dataset.group = card.group;
+    article.dataset.group = primaryGroup;
+    article.dataset.groups = groups.join(' ');
 
     const features = (Array.isArray(card.features) ? card.features : [])
       .map((item) => `<li>${escapeHtml(item)}</li>`)
@@ -254,18 +285,22 @@ async function renderPlanCards(group = 'all') {
         }</a>`
       : '';
 
+    const badgeMarkup = groups
+      .map(
+        (groupKey) =>
+          `<p class="plan-badge plan-badge--${escapeHtml(groupKey)}">${escapeHtml(getGroupLabel(groupKey))}</p>`
+      )
+      .join('');
+
     article.innerHTML = `
       <div class="plan-layout">
         ${thumbMarkup}
         <div class="plan-content">
-          <p class="plan-badge">${escapeHtml(card.badge || 'Package')}</p>
+          <div class="plan-badges">${badgeMarkup}</div>
           <h3><a class="plan-title-link" href="${detailHref}">${escapeHtml(card.title || '제목 없음')}</a></h3>
           <p class="plan-copy">${escapeHtml(card.copy || '')}</p>
           <ul>${features}</ul>
           <div class="plan-meta">
-            <p><strong>적용 산업:</strong> ${escapeHtml(card.industry || '-')}</p>
-            <p><strong>구축 기간:</strong> ${escapeHtml(card.period || '-')}</p>
-            <p><strong>연동 범위:</strong> ${escapeHtml(card.integration || '-')}</p>
             <div class="plan-tags">${tags}</div>
           </div>
         </div>
@@ -309,6 +344,10 @@ function openMega() {
   if (!megaHost || !megaTrigger) {
     return;
   }
+  if (megaCloseTimer) {
+    window.clearTimeout(megaCloseTimer);
+    megaCloseTimer = null;
+  }
   megaHost.classList.add('open');
   megaTrigger.setAttribute('aria-expanded', 'true');
 }
@@ -321,6 +360,34 @@ function closeMega() {
   megaTrigger.setAttribute('aria-expanded', 'false');
 }
 
+function scheduleCloseMega(delay = 140) {
+  if (!megaHost || !megaTrigger) {
+    return;
+  }
+  if (megaCloseTimer) {
+    window.clearTimeout(megaCloseTimer);
+  }
+  megaCloseTimer = window.setTimeout(() => {
+    closeMega();
+    megaCloseTimer = null;
+  }, delay);
+}
+
+function activatePlanGroup(group = 'all') {
+  const targetSegment = document.querySelector(`.segment[data-group="${group}"]`);
+  const plansSection = document.getElementById('plans');
+
+  closeNavMenu();
+
+  if (targetSegment) {
+    targetSegment.click();
+  }
+
+  if (plansSection) {
+    plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 document.addEventListener('click', (event) => {
   if (megaHost && !megaHost.contains(event.target)) {
     closeMega();
@@ -329,11 +396,16 @@ document.addEventListener('click', (event) => {
 
 if (megaHost && megaTrigger) {
   megaTrigger.addEventListener('click', () => {
-    if (megaHost.classList.contains('open')) {
-      closeMega();
-    } else {
-      openMega();
+    if (window.matchMedia('(max-width: 599px)').matches) {
+      if (megaHost.classList.contains('open')) {
+        closeMega();
+      } else {
+        openMega();
+      }
+      return;
     }
+
+    activatePlanGroup('all');
   });
 
   megaHost.addEventListener('mouseenter', () => {
@@ -344,8 +416,19 @@ if (megaHost && megaTrigger) {
 
   megaHost.addEventListener('mouseleave', () => {
     if (window.matchMedia('(min-width: 600px)').matches) {
-      closeMega();
+      scheduleCloseMega();
     }
+  });
+
+  megaHost.addEventListener('focusin', () => {
+    openMega();
+  });
+
+  megaHost.addEventListener('focusout', (event) => {
+    if (megaHost.contains(event.relatedTarget)) {
+      return;
+    }
+    scheduleCloseMega(100);
   });
 }
 
@@ -477,20 +560,7 @@ document.querySelectorAll('.nav a[href^="#"]').forEach((link) => {
 document.querySelectorAll('.nav a[data-group]').forEach((link) => {
   link.addEventListener('click', (event) => {
     event.preventDefault();
-
-    const targetGroup = link.dataset.group;
-    const targetSegment = document.querySelector(`.segment[data-group="${targetGroup}"]`);
-    const plansSection = document.getElementById('plans');
-
-    closeNavMenu();
-
-    if (targetSegment) {
-      targetSegment.click();
-    }
-
-    if (plansSection) {
-      plansSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    activatePlanGroup(link.dataset.group);
   });
 });
 

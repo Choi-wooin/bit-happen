@@ -30,16 +30,17 @@
         <form id="card-form">
           <input type="hidden" id="card-id" />
 
-          <label>사업영역
-            <select id="group" required>
-              <option value="kiosk">Kiosk</option>
-              <option value="ai">AI</option>
-              <option value="airport">Airport</option>
-              <option value="device-interface">Device interface</option>
-              <option value="product">Product</option>
-              <option value="all">All/Enterprise</option>
-            </select>
-          </label>
+          <fieldset class="group-fieldset">
+            <legend>사업영역</legend>
+            <div class="checkbox-grid" id="group-options">
+              <label class="checkbox-chip"><input type="checkbox" name="group" value="kiosk" /><span>Kiosk</span></label>
+              <label class="checkbox-chip"><input type="checkbox" name="group" value="ai" /><span>AI</span></label>
+              <label class="checkbox-chip"><input type="checkbox" name="group" value="airport" /><span>Airport</span></label>
+              <label class="checkbox-chip"><input type="checkbox" name="group" value="device-interface" /><span>Device interface</span></label>
+              <label class="checkbox-chip"><input type="checkbox" name="group" value="product" /><span>Product</span></label>
+              <label class="checkbox-chip"><input type="checkbox" name="group" value="all" /><span>All/Enterprise</span></label>
+            </div>
+          </fieldset>
 
           <label>배지
             <input id="badge" required />
@@ -55,18 +56,6 @@
 
           <label>핵심 기능 (줄바꿈으로 구분)
             <textarea id="features" rows="4" required></textarea>
-          </label>
-
-          <label>적용 산업
-            <input id="industry" />
-          </label>
-
-          <label>구축 기간
-            <input id="period" />
-          </label>
-
-          <label>연동 범위
-            <input id="integration" />
           </label>
 
           <label>태그 (콤마 구분)

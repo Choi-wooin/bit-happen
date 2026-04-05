@@ -11,14 +11,11 @@ const exportCardsSourceButton = document.getElementById('export-cards-source');
 
 const fields = {
   id: document.getElementById('card-id'),
-  group: document.getElementById('group'),
+  groups: Array.from(document.querySelectorAll('input[name="group"]')),
   badge: document.getElementById('badge'),
   title: document.getElementById('title'),
   copy: document.getElementById('copy'),
   features: document.getElementById('features'),
-  industry: document.getElementById('industry'),
-  period: document.getElementById('period'),
-  integration: document.getElementById('integration'),
   tags: document.getElementById('tags'),
   priority: document.getElementById('priority'),
   span: document.getElementById('span'),
@@ -49,13 +46,40 @@ function getGroupLabel(group) {
   return GROUP_LABELS[group] || String(group || '').trim() || 'Unknown';
 }
 
-function syncBadgeWithGroup(force = false) {
-  const nextBadge = GROUP_DEFAULT_BADGES[fields.group.value] || 'Package';
-  const currentBadge = fields.badge.value.trim();
-  const knownBadges = new Set(Object.values(GROUP_DEFAULT_BADGES));
+function getCardGroups(card) {
+  return window.BitHappenCardStore?.getCardGroups
+    ? window.BitHappenCardStore.getCardGroups(card)
+    : [String(card?.group || 'all').trim() || 'all'];
+}
 
-  if (force || !currentBadge || knownBadges.has(currentBadge)) {
+function getSelectedGroups() {
+  return fields.groups.filter((input) => input.checked).map((input) => input.value);
+}
+
+function setSelectedGroups(groups) {
+  const selected = new Set(
+    window.BitHappenCardStore?.normalizeGroupList
+      ? window.BitHappenCardStore.normalizeGroupList(groups, 'kiosk')
+      : Array.isArray(groups)
+      ? groups
+      : [groups]
+  );
+
+  fields.groups.forEach((input) => {
+    input.checked = selected.has(input.value);
+  });
+}
+
+function syncBadgeWithGroup(force = false) {
+  const nextBadge = getSelectedGroups()
+    .map((group) => GROUP_DEFAULT_BADGES[group] || getGroupLabel(group))
+    .join(' / ') || 'Package';
+  const currentBadge = fields.badge.value.trim();
+  const isAutoBadge = fields.badge.dataset.autoBadge === 'true';
+
+  if (force || !currentBadge || isAutoBadge) {
     fields.badge.value = nextBadge;
+    fields.badge.dataset.autoBadge = 'true';
   }
 }
 
@@ -102,14 +126,11 @@ async function copyText(text) {
 
 function clearForm() {
   fields.id.value = '';
-  fields.group.value = 'kiosk';
+  setSelectedGroups(['kiosk']);
   syncBadgeWithGroup(true);
   fields.title.value = '';
   fields.copy.value = '';
   fields.features.value = '';
-  fields.industry.value = '';
-  fields.period.value = '';
-  fields.integration.value = '';
   fields.tags.value = '';
   fields.priority.value = '100';
   fields.span.value = '1';
@@ -133,15 +154,14 @@ function parseTags(value) {
 }
 
 function fillForm(card) {
+  const groups = getCardGroups(card);
   fields.id.value = card.id;
-  fields.group.value = card.group;
+  setSelectedGroups(groups);
   fields.badge.value = card.badge;
+  fields.badge.dataset.autoBadge = 'false';
   fields.title.value = card.title;
   fields.copy.value = card.copy;
   fields.features.value = card.features.join('\n');
-  fields.industry.value = card.industry || '';
-  fields.period.value = card.period || '';
-  fields.integration.value = card.integration || '';
   fields.tags.value = (card.tags || []).join(', ');
   fields.priority.value = String(card.priority);
   fields.span.value = String(card.span || 1);
@@ -188,6 +208,7 @@ function renderList() {
   listRoot.innerHTML = '';
 
   cards.forEach((card) => {
+    const groups = getCardGroups(card);
     const item = document.createElement('article');
     item.className = 'item';
     item.innerHTML = `
@@ -195,7 +216,7 @@ function renderList() {
         <h3>${card.title}</h3>
         <strong>P${card.priority}</strong>
       </div>
-      <p class="item-meta">${getGroupLabel(card.group)} | ${card.badge} | ${card.span}칸 | ${card.enabled === false ? '비노출' : '노출'}</p>
+      <p class="item-meta">${groups.map((group) => getGroupLabel(group)).join(', ')} | ${card.badge} | ${card.span}칸 | ${card.enabled === false ? '비노출' : '노출'}</p>
       <div class="item-actions">
         <button type="button" data-action="edit">편집</button>
         <button type="button" data-action="up">우선순위 +</button>
@@ -228,17 +249,21 @@ form.addEventListener('submit', async (event) => {
 
   const isEdit = Boolean(fields.id.value);
   const cards = getCards();
+  const groups = getSelectedGroups();
+
+  if (!groups.length) {
+    alert('사업영역을 1개 이상 선택해 주세요.');
+    return;
+  }
 
   const payload = {
     id: isEdit ? fields.id.value : `card-${Date.now()}`,
-    group: fields.group.value,
+    group: groups[0],
+    groups,
     badge: fields.badge.value.trim(),
     title: fields.title.value.trim(),
     copy: fields.copy.value.trim(),
     features: parseLines(fields.features.value),
-    industry: fields.industry.value.trim(),
-    period: fields.period.value.trim(),
-    integration: fields.integration.value.trim(),
     tags: parseTags(fields.tags.value),
     priority: Number(fields.priority.value),
     span: Number(fields.span.value),
@@ -258,8 +283,14 @@ form.addEventListener('submit', async (event) => {
   clearForm();
 });
 
-fields.group.addEventListener('change', () => {
-  syncBadgeWithGroup();
+fields.groups.forEach((input) => {
+  input.addEventListener('change', () => {
+    syncBadgeWithGroup();
+  });
+});
+
+fields.badge.addEventListener('input', () => {
+  fields.badge.dataset.autoBadge = 'false';
 });
 
 createNewButton.addEventListener('click', () => clearForm());

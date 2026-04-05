@@ -28,6 +28,35 @@ function getGroupLabel(group) {
   return GROUP_LABELS[group] || String(group || '').trim() || 'Solution';
 }
 
+function getCardGroups(card) {
+  return window.BitHappenCardStore?.getCardGroups
+    ? window.BitHappenCardStore.getCardGroups(card)
+    : [String(card?.group || 'all').trim() || 'all'];
+}
+
+function getPrimaryGroup(card) {
+  return window.BitHappenCardStore?.getPrimaryGroup
+    ? window.BitHappenCardStore.getPrimaryGroup(card)
+    : getCardGroups(card)[0] || 'all';
+}
+
+function renderGroupBadges(groups) {
+  return groups
+    .map((group) => `<p class="badge badge--${esc(group)}">${esc(getGroupLabel(group))}</p>`)
+    .join('');
+}
+
+function sharesAnyGroup(leftCard, rightCard) {
+  const leftGroups = getCardGroups(leftCard);
+  const rightGroups = new Set(getCardGroups(rightCard));
+
+  if (leftGroups.includes('all') || rightGroups.has('all')) {
+    return true;
+  }
+
+  return leftGroups.some((group) => rightGroups.has(group));
+}
+
 function resolveMediaPath(src) {
   const value = String(src || '')
     .trim()
@@ -115,14 +144,23 @@ function getSupabaseConfig() {
 
 let detailOverrideStateCache = null;
 
+function hasOwnSectionKey(source, key) {
+  return Boolean(source && typeof source === 'object' && Object.prototype.hasOwnProperty.call(source, key));
+}
+
+function hasDirectSectionOverride(source) {
+  return ['intentHtml', 'architectureHtml', 'referenceHtml'].some((key) => hasOwnSectionKey(source, key));
+}
+
 function normalizeDetailOverride(value) {
   if (!value || typeof value !== 'object') return null;
 
   const normalized = {};
+  let hasExplicitHtml = false;
   ['intentHtml', 'architectureHtml', 'referenceHtml'].forEach((key) => {
-    const raw = String(value[key] || '').trim();
-    if (raw) {
-      normalized[key] = raw;
+    if (hasOwnSectionKey(value, key)) {
+      normalized[key] = String(value[key] || '').trim();
+      hasExplicitHtml = true;
     }
   });
 
@@ -140,7 +178,7 @@ function normalizeDetailOverride(value) {
     normalized.kpis = value.kpis;
   }
 
-  return Object.keys(normalized).length ? normalized : null;
+  return hasExplicitHtml || Object.keys(normalized).length ? normalized : null;
 }
 
 function hasMeaningfulHtml(value) {
@@ -231,18 +269,26 @@ function buildLegacyDetailSections(source, card, groupText) {
 }
 
 function resolveDetailSections(override, card, groupText) {
-  const legacy = buildLegacyDetailSections(override, card, groupText);
+  if (!override || typeof override !== 'object') {
+    return {
+      intentHtml: '',
+      architectureHtml: '',
+      referenceHtml: '',
+    };
+  }
+
   const direct = {
-    intentHtml: hasMeaningfulHtml(override?.intentHtml) ? String(override.intentHtml).trim() : '',
-    architectureHtml: hasMeaningfulHtml(override?.architectureHtml) ? String(override.architectureHtml).trim() : '',
-    referenceHtml: hasMeaningfulHtml(override?.referenceHtml) ? String(override.referenceHtml).trim() : '',
+    intentHtml: hasOwnSectionKey(override, 'intentHtml') ? String(override.intentHtml || '').trim() : '',
+    architectureHtml: hasOwnSectionKey(override, 'architectureHtml') ? String(override.architectureHtml || '').trim() : '',
+    referenceHtml: hasOwnSectionKey(override, 'referenceHtml') ? String(override.referenceHtml || '').trim() : '',
   };
 
-  return {
-    intentHtml: direct.intentHtml || legacy.intentHtml,
-    architectureHtml: direct.architectureHtml || legacy.architectureHtml,
-    referenceHtml: direct.referenceHtml || legacy.referenceHtml,
-  };
+  if (hasDirectSectionOverride(override)) {
+    return direct;
+  }
+
+  return buildLegacyDetailSections(override, card, groupText);
+
 }
 
 function convertOembedToIframes(html) {
@@ -302,12 +348,12 @@ function convertOembedToIframes(html) {
 }
 
 function renderRichDetailSection(title, html) {
-  if (!hasMeaningfulHtml(html)) return '';
-  var processed = convertOembedToIframes(html);
+  var raw = String(html || '').trim();
+  var processed = raw ? convertOembedToIframes(raw) : '';
   return `
     <section class="section rich-section">
       <h2>${esc(title)}</h2>
-      <div class="rich-section-body">${processed}</div>
+      <div class="rich-section-body${processed ? '' : ' is-empty'}">${processed}</div>
     </section>
   `;
 }
@@ -715,7 +761,9 @@ async function render() {
     return;
   }
 
-  const groupText = detailTextByGroup[card.group] || detailTextByGroup.all;
+  const cardGroups = getCardGroups(card);
+  const primaryGroup = getPrimaryGroup(card);
+  const groupText = detailTextByGroup[primaryGroup] || detailTextByGroup.all;
   const remoteOverride = await getSupabaseDetailOverrideByCardId(card.id);
   const localOverride = detailOverridesById[card.id] || null;
   const override = remoteOverride || localOverride;
@@ -737,7 +785,7 @@ async function render() {
     : cardMedia;
 
   const related = cards
-    .filter((item) => item.enabled !== false && item.group === card.group && item.id !== card.id)
+    .filter((item) => item.enabled !== false && item.id !== card.id && sharesAnyGroup(item, card))
     .slice(0, 3)
     .map(
       (item) =>
@@ -752,7 +800,7 @@ async function render() {
   root.innerHTML = `
     <section class="hero">
       <div>
-        <p class="badge">${esc(card.badge || card.group || 'Solution')}</p>
+        <div class="hero-badges">${renderGroupBadges(cardGroups)}</div>
         <h1>${esc(card.title)}</h1>
         <p>${esc(card.copy || '')}</p>
         <div class="hero-actions">
@@ -760,10 +808,7 @@ async function render() {
         </div>
       </div>
       <aside class="hero-meta">
-        <p><strong>적용 산업:</strong> ${esc(card.industry || '-')}</p>
-        <p><strong>구축 기간:</strong> ${esc(card.period || '-')}</p>
-        <p><strong>연동 범위:</strong> ${esc(card.integration || '-')}</p>
-        <p><strong>사업 영역:</strong> ${esc(getGroupLabel(card.group))}</p>
+        <p><strong>사업 영역:</strong> ${esc(cardGroups.map((group) => getGroupLabel(group)).join(', '))}</p>
       </aside>
     </section>
 

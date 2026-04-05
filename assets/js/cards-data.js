@@ -638,11 +638,42 @@
     return JSON.parse(JSON.stringify(value));
   }
 
+  function normalizeGroupList(value, fallbackGroup = 'all') {
+    const source = Array.isArray(value) ? value : [value];
+    const normalized = source
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+      .filter((item, index, array) => array.indexOf(item) === index);
+
+    if (normalized.length) {
+      return normalized;
+    }
+
+    const fallback = String(fallbackGroup || 'all').trim() || 'all';
+    return [fallback];
+  }
+
+  function getCardGroups(card) {
+    if (!card || typeof card !== 'object') {
+      return ['all'];
+    }
+
+    const rawGroups = Array.isArray(card.groups) && card.groups.length ? card.groups : card.group;
+    const fallback = String(card.group || 'all').trim() || 'all';
+    return normalizeGroupList(rawGroups, fallback);
+  }
+
+  function getPrimaryGroup(card) {
+    return getCardGroups(card)[0] || 'all';
+  }
+
   function normalizeCard(card) {
+    const groups = getCardGroups(card);
     return {
       id: String(card.id || `card-${Date.now()}`),
       enabled: card.enabled !== false,
-      group: card.group || 'all',
+      group: groups[0],
+      groups,
       badge: card.badge || 'Package',
       title: card.title || '제목 없음',
       copy: card.copy || '',
@@ -858,6 +889,9 @@
   window.BitHappenCardStore = {
     key: STORAGE_KEY,
     getCards,
+    getCardGroups,
+    getPrimaryGroup,
+    normalizeGroupList,
     saveCards,
     resetCards,
     refreshCards,

@@ -71,13 +71,52 @@ main {
   gap: 16px;
 }
 
-.badge {
-  margin: 0 0 6px;
-  font-size: 0.78rem;
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.hero .badge {
+  margin: 0;
+  font-size: 0.74rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-weight: 800;
-  color: #0e7864;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 5px;
+  background: #4f5965;
+}
+
+.hero .badge--kiosk {
+  background: #1f8f5f;
+  color: #fff;
+}
+
+.hero .badge--ai {
+  background: #cf3341;
+  color: #fff;
+}
+
+.hero .badge--airport {
+  background: #1f66d1;
+  color: #fff;
+}
+
+.hero .badge--device-interface {
+  background: #ffd84d;
+  color: #111;
+}
+
+.hero .badge--product {
+  background: #f28c28;
+  color: #fff;
 }
 
 h1,
@@ -170,6 +209,10 @@ h1 {
 .rich-section-body {
   display: grid;
   gap: 16px;
+}
+
+.rich-section-body.is-empty {
+  min-height: 24px;
 }
 
 .rich-section-body > * {
