@@ -4,6 +4,9 @@ const megaHost = document.getElementById('mega-host');
 const megaTrigger = document.getElementById('mega-trigger');
 const planGrid = document.getElementById('plan-grid');
 const viewportDebug = document.getElementById('viewport-debug');
+const navHashLinks = Array.from(document.querySelectorAll('.nav a[href^="#"]'));
+const navGroupLinks = Array.from(document.querySelectorAll('.nav a[data-group]'));
+const navLinkByHash = new Map(navHashLinks.map((link) => [link.getAttribute('href'), link]));
 
 const segments = document.querySelectorAll('.segment');
 const groupSegments = document.querySelectorAll('.segment[data-group]');
@@ -27,6 +30,24 @@ const GROUP_LABELS = {
 };
 let megaCloseTimer = null;
 const REPRESENTATIVE_LIMIT_PER_GROUP = 2;
+let navScrollTicking = false;
+let lastScrollY = window.scrollY || 0;
+let activeNavSectionId = 'vision';
+let copyToastState = null;
+
+const navSectionDefinitions = [
+  { sectionIds: ['vision'], control: navLinkByHash.get('#vision') || null },
+  { sectionIds: ['business-area'], control: navLinkByHash.get('#business-area') || null },
+  { sectionIds: ['capabilities'], control: navLinkByHash.get('#capabilities') || null },
+  {
+    sectionIds: ['plans', 'tech-stack', 'practical-value', 'differentiation', 'applications'],
+    control: megaTrigger,
+  },
+  { sectionIds: ['contact'], control: navLinkByHash.get('#contact') || null },
+].filter((item) => item.control);
+
+const navSectionOrder = navSectionDefinitions.flatMap((item) => item.sectionIds);
+const primaryNavControls = navSectionDefinitions.map((item) => item.control);
 
 function getViewportBreakpointLabel(width) {
   if (width <= 599) return 'Phone <= 599px';
@@ -38,6 +59,109 @@ function updateViewportDebug() {
   if (!viewportDebug) return;
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
   viewportDebug.textContent = `Viewport ${viewportWidth}px | ${getViewportBreakpointLabel(viewportWidth)}`;
+}
+
+function setControlActiveState(control, isActive) {
+  if (!control) return;
+  control.classList.toggle('is-active', isActive);
+  if (control.tagName === 'A') {
+    if (isActive) {
+      control.setAttribute('aria-current', 'location');
+    } else {
+      control.removeAttribute('aria-current');
+    }
+  }
+}
+
+function setActiveNavSection(sectionId, solutionGroup = activeGroup) {
+  activeNavSectionId = sectionId;
+  const activeDefinition = navSectionDefinitions.find((item) => item.sectionIds.includes(sectionId)) || null;
+
+  primaryNavControls.forEach((control) => {
+    setControlActiveState(control, control === activeDefinition?.control);
+  });
+
+  navGroupLinks.forEach((link) => {
+    const isActive = activeDefinition?.control === megaTrigger && link.dataset.group === solutionGroup;
+    setControlActiveState(link, isActive);
+  });
+}
+
+function getSectionRect(sectionId) {
+  const section = document.getElementById(sectionId);
+  return section ? section.getBoundingClientRect() : null;
+}
+
+function isContactFullyVisible() {
+  const contactRect = getSectionRect('contact');
+  if (!contactRect) {
+    return false;
+  }
+
+  const headerBottom = header?.getBoundingClientRect().bottom || 0;
+  return contactRect.top >= headerBottom && contactRect.bottom <= window.innerHeight;
+}
+
+function getNavSectionIndex(sectionId = activeNavSectionId) {
+  const index = navSectionOrder.indexOf(sectionId);
+  return index >= 0 ? index : 0;
+}
+
+function getCurrentNavSectionId() {
+  if (isContactFullyVisible()) {
+    return 'contact';
+  }
+
+  const currentIndex = getNavSectionIndex();
+  const currentSectionId = navSectionOrder[currentIndex] || 'vision';
+  const currentRect = getSectionRect(currentSectionId);
+  const currentScrollY = window.scrollY || 0;
+  const isScrollingDown = currentScrollY > lastScrollY;
+  const thresholdFromTop = window.innerHeight * (2 / 3);
+
+  if (!currentRect) {
+    lastScrollY = currentScrollY;
+    return navSectionOrder[0] || 'vision';
+  }
+
+  let nextIndex = currentIndex;
+
+  if (isScrollingDown) {
+    while (nextIndex < navSectionOrder.length - 1) {
+      const candidateRect = getSectionRect(navSectionOrder[nextIndex + 1]);
+      if (!candidateRect || candidateRect.top > thresholdFromTop) {
+        break;
+      }
+      nextIndex += 1;
+    }
+  } else if (currentScrollY < lastScrollY) {
+    while (nextIndex > 0) {
+      const activeRect = getSectionRect(navSectionOrder[nextIndex]);
+      if (!activeRect || activeRect.top <= thresholdFromTop) {
+        break;
+      }
+      nextIndex -= 1;
+    }
+  }
+
+  lastScrollY = currentScrollY;
+  return navSectionOrder[nextIndex] || currentSectionId;
+}
+
+function syncActiveNavToScroll() {
+  setActiveNavSection(getCurrentNavSectionId(), activeGroup);
+}
+
+function scheduleNavScrollSync() {
+  if (navScrollTicking) {
+    return;
+  }
+
+  navScrollTicking = true;
+  window.requestAnimationFrame(() => {
+    syncActiveNavToScroll();
+    navScrollTicking = false;
+  });
 }
 
 function escapeHtml(value) {
@@ -408,6 +532,7 @@ function activatePlanGroup(group = 'all') {
   const plansSection = document.getElementById('plans');
 
   closeNavMenu();
+  setActiveNavSection('plans', group);
 
   if (targetSegment) {
     targetSegment.click();
@@ -480,6 +605,75 @@ function closeNavMenu() {
   header.classList.remove('nav-open');
   menuToggle.setAttribute('aria-expanded', 'false');
   closeMega();
+}
+
+function getCopyToastState() {
+  if (copyToastState) {
+    return copyToastState;
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'copy-toast';
+  toast.setAttribute('aria-live', 'polite');
+  toast.setAttribute('aria-atomic', 'true');
+  document.body.appendChild(toast);
+
+  let timerId = null;
+
+  copyToastState = {
+    show(message) {
+      toast.textContent = message;
+      toast.classList.add('is-visible');
+      if (timerId) {
+        window.clearTimeout(timerId);
+      }
+      timerId = window.setTimeout(() => {
+        toast.classList.remove('is-visible');
+        timerId = null;
+      }, 1800);
+    },
+  };
+
+  return copyToastState;
+}
+
+async function copyTextToClipboard(text, label) {
+  const value = String(text || '').trim();
+  if (!value) {
+    return;
+  }
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = value;
+      textArea.setAttribute('readonly', 'true');
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      textArea.remove();
+    }
+    getCopyToastState().show(`${label}가 클립보드에 복사되었습니다.`);
+  } catch (_error) {
+    getCopyToastState().show(`${label} 복사에 실패했습니다.`);
+  }
+}
+
+function bindFooterInfoActions(scope = document) {
+  scope.querySelectorAll('[data-copy-text]').forEach((trigger) => {
+    if (trigger.dataset.copyBound === 'true') {
+      return;
+    }
+
+    trigger.dataset.copyBound = 'true';
+    trigger.addEventListener('click', () => {
+      copyTextToClipboard(trigger.dataset.copyText, trigger.dataset.copyLabel || '텍스트');
+    });
+  });
 }
 
 function getInquiryModalState() {
@@ -584,6 +778,7 @@ document.querySelectorAll('.nav a[href^="#"]').forEach((link) => {
     }
 
     event.preventDefault();
+    setActiveNavSection(targetElement.id, activeGroup);
     targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
@@ -591,16 +786,22 @@ document.querySelectorAll('.nav a[href^="#"]').forEach((link) => {
 document.querySelectorAll('.nav a[data-group]').forEach((link) => {
   link.addEventListener('click', (event) => {
     event.preventDefault();
+    setActiveNavSection('plans', link.dataset.group);
     activatePlanGroup(link.dataset.group);
   });
 });
 
 function setGroupSegment(group) {
+  activeGroup = group;
   groupSegments.forEach((segment) => {
     const isActive = segment.dataset.group === group;
     segment.classList.toggle('active', isActive);
     segment.setAttribute('aria-selected', String(isActive));
   });
+
+  if (getCurrentNavSectionId() === 'plans') {
+    setActiveNavSection('plans', group);
+  }
 }
 
 function setSolutionMode(mode = 'featured') {
@@ -615,14 +816,7 @@ function setSolutionMode(mode = 'featured') {
 
 groupSegments.forEach((segment) => {
   segment.addEventListener('click', () => {
-    groupSegments.forEach((s) => {
-      s.classList.remove('active');
-      s.setAttribute('aria-selected', 'false');
-    });
-
-    segment.classList.add('active');
-    segment.setAttribute('aria-selected', 'true');
-
+    setGroupSegment(segment.dataset.group);
     renderPlanCards(segment.dataset.group, activeSolutionMode);
   });
 });
@@ -642,7 +836,10 @@ window.addEventListener('bitHappenCardsUpdated', () => {
 window.addEventListener('resize', () => {
   updateViewportDebug();
   adjustTabletLeadThumbs();
+  scheduleNavScrollSync();
 });
+
+window.addEventListener('scroll', scheduleNavScrollSync, { passive: true });
 
 const revealElements = document.querySelectorAll('.reveal');
 const observer = new IntersectionObserver(
@@ -659,7 +856,9 @@ const observer = new IntersectionObserver(
 revealElements.forEach((el) => observer.observe(el));
 
 bindInquiryTriggers();
+bindFooterInfoActions();
 updateViewportDebug();
 setGroupSegment('all');
 setSolutionMode('featured');
 renderPlanCards('all', 'featured');
+syncActiveNavToScroll();
