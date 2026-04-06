@@ -92,6 +92,22 @@ function getSectionRect(sectionId) {
   return section ? section.getBoundingClientRect() : null;
 }
 
+function getSectionHeadingRect(sectionId) {
+  const section = document.getElementById(sectionId);
+  const heading = section?.querySelector('h2');
+  return heading ? heading.getBoundingClientRect() : null;
+}
+
+function isSectionHeadingVisible(sectionId) {
+  const headingRect = getSectionHeadingRect(sectionId);
+  if (!headingRect) {
+    return false;
+  }
+
+  const headerBottom = header?.getBoundingClientRect().bottom || 0;
+  return headingRect.bottom > headerBottom && headingRect.top < window.innerHeight;
+}
+
 function isContactFullyVisible() {
   const contactRect = getSectionRect('contact');
   if (!contactRect) {
@@ -127,6 +143,11 @@ function getCurrentNavSectionId() {
   let nextIndex = currentIndex;
 
   if (isScrollingDown) {
+    if (isSectionHeadingVisible(currentSectionId)) {
+      lastScrollY = currentScrollY;
+      return currentSectionId;
+    }
+
     while (nextIndex < navSectionOrder.length - 1) {
       const candidateRect = getSectionRect(navSectionOrder[nextIndex + 1]);
       if (!candidateRect || candidateRect.top > thresholdFromTop) {
@@ -135,6 +156,14 @@ function getCurrentNavSectionId() {
       nextIndex += 1;
     }
   } else if (currentScrollY < lastScrollY) {
+    while (nextIndex > 0) {
+      const previousSectionId = navSectionOrder[nextIndex - 1];
+      if (!isSectionHeadingVisible(previousSectionId)) {
+        break;
+      }
+      nextIndex -= 1;
+    }
+
     while (nextIndex > 0) {
       const activeRect = getSectionRect(navSectionOrder[nextIndex]);
       if (!activeRect || activeRect.top <= thresholdFromTop) {
@@ -607,6 +636,19 @@ function closeNavMenu() {
   closeMega();
 }
 
+function scheduleInquiryModalWarmup() {
+  const warmup = () => {
+    getInquiryModalState();
+  };
+
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(warmup, { timeout: 2000 });
+    return;
+  }
+
+  window.setTimeout(warmup, 1200);
+}
+
 function getCopyToastState() {
   if (copyToastState) {
     return copyToastState;
@@ -657,7 +699,7 @@ async function copyTextToClipboard(text, label) {
       document.execCommand('copy');
       textArea.remove();
     }
-    getCopyToastState().show(`${label}가 클립보드에 복사되었습니다.`);
+    getCopyToastState().show(`${label}가(이) 클립보드에 복사되었습니다.`);
   } catch (_error) {
     getCopyToastState().show(`${label} 복사에 실패했습니다.`);
   }
@@ -700,7 +742,7 @@ function getInquiryModalState() {
           class="inquiry-modal__frame"
           src="${inquiryEmbedUrl}"
           title="BIT HAPPENS 도입 문의"
-          loading="lazy"
+          loading="eager"
           allow="clipboard-write"
         ></iframe>
       </div>
@@ -857,6 +899,7 @@ revealElements.forEach((el) => observer.observe(el));
 
 bindInquiryTriggers();
 bindFooterInfoActions();
+scheduleInquiryModalWarmup();
 updateViewportDebug();
 setGroupSegment('all');
 setSolutionMode('featured');
