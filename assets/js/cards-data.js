@@ -1,6 +1,7 @@
 (function () {
   const STORAGE_KEY = 'bitHappenPlanCards_v1';
   const STORAGE_META_KEY = 'bitHappenPlanCardsMeta_v1';
+  const ENABLED_RESET_MIGRATION_KEY = 'bitHappenEnabledReset_v05';
 
   const defaultCards = [
     {
@@ -697,6 +698,15 @@
       .sort((a, b) => a.priority - b.priority || a.title.localeCompare(b.title, 'ko'));
   }
 
+  function clearEnabledFlags(cards) {
+    return sortCards(
+      (Array.isArray(cards) ? cards : []).map((card) => ({
+        ...card,
+        enabled: false,
+      }))
+    );
+  }
+
   const SORTED_DEFAULTS = sortCards(defaultCards);
   const DEFAULTS_SIGNATURE = JSON.stringify(SORTED_DEFAULTS);
   let cardsCache = clone(SORTED_DEFAULTS);
@@ -790,6 +800,26 @@
     );
   }
 
+  function hasEnabledCards(cards) {
+    return Array.isArray(cards) && cards.some((card) => card?.enabled !== false);
+  }
+
+  function isEnabledResetMigrationComplete() {
+    try {
+      return localStorage.getItem(ENABLED_RESET_MIGRATION_KEY) === 'true';
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  function markEnabledResetMigrationComplete() {
+    try {
+      localStorage.setItem(ENABLED_RESET_MIGRATION_KEY, 'true');
+    } catch (_error) {
+      // Ignore storage failures.
+    }
+  }
+
   function resetStorageToDefaults() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(SORTED_DEFAULTS));
     writeStorageMeta();
@@ -864,25 +894,46 @@
 
   async function refreshCards() {
     const localCards = readLocalCardsWithDefaults();
-    cardsCache = clone(localCards);
+    const shouldResetEnabled = !isEnabledResetMigrationComplete();
+    const migratedLocalCards = shouldResetEnabled && hasEnabledCards(localCards) ? clearEnabledFlags(localCards) : localCards;
+
+    if (migratedLocalCards !== localCards) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedLocalCards));
+      writeStorageMeta();
+    }
+
+    cardsCache = clone(migratedLocalCards);
     emitCardsUpdated();
 
     try {
       const remoteCards = await fetchCardsFromSupabase();
       if (Array.isArray(remoteCards) && remoteCards.length > 0) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteCards));
+        const migratedRemoteCards = shouldResetEnabled && hasEnabledCards(remoteCards) ? clearEnabledFlags(remoteCards) : remoteCards;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedRemoteCards));
         writeStorageMeta();
-        cardsCache = clone(remoteCards);
+        cardsCache = clone(migratedRemoteCards);
         emitCardsUpdated();
+        if (shouldResetEnabled && hasEnabledCards(remoteCards)) {
+          await saveCardsToSupabase(migratedRemoteCards);
+        }
+        if (shouldResetEnabled) {
+          markEnabledResetMigrationComplete();
+        }
         return { source: 'supabase' };
       }
 
       const cfg = getSupabaseConfig();
       if (cfg.enabled) {
-        await saveCardsToSupabase(localCards);
+        await saveCardsToSupabase(migratedLocalCards);
+      }
+      if (shouldResetEnabled) {
+        markEnabledResetMigrationComplete();
       }
       return { source: 'local' };
     } catch (_error) {
+      if (shouldResetEnabled) {
+        markEnabledResetMigrationComplete();
+      }
       return { source: 'local', warning: 'supabase-unavailable' };
     }
   }

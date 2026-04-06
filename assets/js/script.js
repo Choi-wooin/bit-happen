@@ -28,6 +28,7 @@ const GROUP_LABELS = {
   product: 'Product',
   all: 'Enterprise',
 };
+const SOLUTION_RETURN_STATE_KEY = 'bitHappenSolutionReturnState_v1';
 let megaCloseTimer = null;
 const REPRESENTATIVE_LIMIT_PER_GROUP = 2;
 let navScrollTicking = false;
@@ -59,6 +60,76 @@ function updateViewportDebug() {
   if (!viewportDebug) return;
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
   viewportDebug.textContent = `Viewport ${viewportWidth}px | ${getViewportBreakpointLabel(viewportWidth)}`;
+}
+
+function saveSolutionReturnState(cardId = '') {
+  try {
+    sessionStorage.setItem(
+      SOLUTION_RETURN_STATE_KEY,
+      JSON.stringify({
+        scrollY: window.scrollY || window.pageYOffset || 0,
+        group: activeGroup,
+        mode: activeSolutionMode,
+        cardId: String(cardId || '').trim(),
+        timestamp: Date.now(),
+      })
+    );
+  } catch (_error) {
+    // Ignore storage failures and keep navigation working.
+  }
+}
+
+function consumeSolutionReturnState() {
+  try {
+    const raw = sessionStorage.getItem(SOLUTION_RETURN_STATE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    sessionStorage.removeItem(SOLUTION_RETURN_STATE_KEY);
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+
+    return {
+      scrollY: Math.max(0, Number(parsed.scrollY) || 0),
+      group: String(parsed.group || 'all').trim() || 'all',
+      mode: parsed.mode === 'all' ? 'all' : 'featured',
+      cardId: String(parsed.cardId || '').trim(),
+    };
+  } catch (_error) {
+    return null;
+  }
+}
+
+function shouldRestoreSolutionReturnState() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('restoreSolutionState') === '1';
+}
+
+function cleanupRestoreSolutionStateParam() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has('restoreSolutionState')) {
+    return;
+  }
+
+  url.searchParams.delete('restoreSolutionState');
+  window.history.replaceState({}, document.title, `${url.pathname}${url.search}${url.hash}`);
+}
+
+function restoreSolutionReturnState(state) {
+  if (!state) {
+    return;
+  }
+
+  const restore = () => {
+    window.scrollTo({ top: state.scrollY, behavior: 'auto' });
+  };
+
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(restore);
+  });
 }
 
 function setControlActiveState(control, isActive) {
@@ -228,22 +299,7 @@ function getCardsBySolutionMode(cards, mode = activeSolutionMode) {
     return cards.slice();
   }
 
-  const explicitFeaturedCards = cards.filter((card) => card.featured === true);
-  if (explicitFeaturedCards.length) {
-    return explicitFeaturedCards;
-  }
-
-  const groupCounts = new Map();
-
-  return cards.filter((card) => {
-    const primaryGroup = getPrimaryGroup(card);
-    const currentCount = groupCounts.get(primaryGroup) || 0;
-    if (currentCount >= REPRESENTATIVE_LIMIT_PER_GROUP) {
-      return false;
-    }
-    groupCounts.set(primaryGroup, currentCount + 1);
-    return true;
-  });
+  return cards.filter((card) => card.featured === true);
 }
 
 function resolveMediaPath(src) {
@@ -439,6 +495,7 @@ async function renderPlanCards(group = activeGroup, mode = activeSolutionMode) {
       article.classList.add('wide');
     }
     article.classList.add('plan-card-clickable');
+    article.dataset.cardId = card.id;
     article.dataset.group = primaryGroup;
     article.dataset.groups = groups.join(' ');
 
@@ -496,8 +553,15 @@ async function renderPlanCards(group = activeGroup, mode = activeSolutionMode) {
     article.setAttribute('tabindex', '0');
 
     const openDetail = () => {
+      saveSolutionReturnState(card.id);
       window.location.href = detailHref;
     };
+
+    article.querySelectorAll(`a[href="${detailHref}"]`).forEach((link) => {
+      link.addEventListener('click', () => {
+        saveSolutionReturnState(card.id);
+      });
+    });
 
     article.addEventListener('click', (event) => {
       if (event.target.closest('a, button, input, select, textarea, label, summary, details')) {
@@ -901,7 +965,15 @@ bindInquiryTriggers();
 bindFooterInfoActions();
 scheduleInquiryModalWarmup();
 updateViewportDebug();
-setGroupSegment('all');
-setSolutionMode('featured');
-renderPlanCards('all', 'featured');
+const pendingSolutionReturnState = shouldRestoreSolutionReturnState() ? consumeSolutionReturnState() : null;
+const initialGroup = pendingSolutionReturnState?.group || 'all';
+const initialMode = pendingSolutionReturnState?.mode || 'featured';
+setGroupSegment(initialGroup);
+setSolutionMode(initialMode);
+renderPlanCards(initialGroup, initialMode).then(() => {
+  if (pendingSolutionReturnState) {
+    restoreSolutionReturnState(pendingSolutionReturnState);
+    cleanupRestoreSolutionStateParam();
+  }
+});
 syncActiveNavToScroll();

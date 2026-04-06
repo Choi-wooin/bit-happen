@@ -631,28 +631,31 @@ h2 {
 .hero-capability-list li {
   counter-increment: capability-item;
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: 3px;
-  column-gap: 12px;
+  column-gap: 8px;
   padding: 10px 0 0;
   border-top: 1px solid #edf2f0;
 }
 
 .hero-capability-list li::before {
   content: counter(capability-item, decimal-leading-zero);
-  min-width: 22px;
-  height: 22px;
-  border-radius: 6px;
+  min-width: 0;
+  height: auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   align-self: start;
-  background: #eef5ff;
-  color: #1473e6;
+  margin-right: 0;
+  padding: 4px 10px;
+  border-radius: 5px;
+  background: #1473e6;
+  color: #fff;
   font-family: "Manrope", sans-serif;
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
 }
 
 .hero-capability-list strong {
@@ -771,9 +774,9 @@ h2 {
 .business-area-summary {
   margin: 12px 0 0;
   padding: 14px 16px 14px 18px;
-  border-left: 4px solid #344054;
+  border-left: 4px solid #4f7cff;
   border-radius: 0 12px 12px 0;
-  background: linear-gradient(90deg, rgba(16, 24, 40, 0.07), rgba(16, 24, 40, 0.02));
+  background: linear-gradient(90deg, rgba(79, 124, 255, 0.1), rgba(79, 124, 255, 0.03));
   color: #111;
   font-size: 1.12rem;
   font-weight: 700;
@@ -941,25 +944,19 @@ h2 {
 }
 
 .hero-panel {
-  background: rgba(255, 255, 255, 0.04);
+  background: #000;
 }
 
 .hero-vision-panel {
-  background:
-    linear-gradient(180deg, rgba(20, 115, 230, 0.14), rgba(20, 115, 230, 0.02)),
-    rgba(255, 255, 255, 0.04);
+  background: #000;
 }
 
 .hero-capability-panel {
-  background:
-    linear-gradient(180deg, rgba(10, 127, 104, 0.14), rgba(10, 127, 104, 0.02)),
-    rgba(255, 255, 255, 0.04);
+  background: #000;
 }
 
 #business-area {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
-    rgba(255, 255, 255, 0.03);
+  background: #000;
 }
 
 .hero-vision-summary {
@@ -967,7 +964,7 @@ h2 {
 }
 
 .business-area-summary {
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
+  background: linear-gradient(90deg, rgba(79, 124, 255, 0.2), rgba(79, 124, 255, 0.05));
 }
 
 .hero-capability-summary {
@@ -978,7 +975,7 @@ h2 {
 #business-area .hero-field,
 .hero-capability-card {
   border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
+  background: #000;
   box-shadow: none;
 }
 
