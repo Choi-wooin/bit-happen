@@ -1860,14 +1860,20 @@ body.inquiry-modal-open {
   line-height: 0;
   transform: rotate(180deg);
   background: #000;
+  isolation: isolate;
 }
 
 .divider-main svg {
   position: relative;
   display: block;
-  width: 100%;
-  height: 81px;
-  transform: rotateY(180deg);
+  left: -1px;
+  width: calc(100% + 2px);
+  height: 83px;
+  overflow: visible;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(180deg) translateZ(0);
+  filter: drop-shadow(0 -1px 0 #000) drop-shadow(0 1px 0 var(--bg));
 }
 
 .divider-main .shape-fill {
@@ -1886,13 +1892,20 @@ body.inquiry-modal-open {
   background: transparent;
   pointer-events: none;
   z-index: 1;
+  isolation: isolate;
 }
 
 .divider-footer svg {
   position: relative;
   display: block;
-  width: 100%;
-  height: 52px;
+  left: -1px;
+  width: calc(100% + 2px);
+  height: 54px;
+  overflow: visible;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  filter: drop-shadow(0 -1px 0 var(--bg)) drop-shadow(0 1px 0 #000);
 }
 
 .divider-footer .shape-fill {
