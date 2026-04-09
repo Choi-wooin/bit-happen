@@ -961,6 +961,37 @@ const observer = new IntersectionObserver(
 
 revealElements.forEach((el) => observer.observe(el));
 
+/* --- Stats counter animation --- */
+(function initStatCounters() {
+  const statNumbers = document.querySelectorAll('.stat-number[data-target]');
+  if (!statNumbers.length) return;
+  let animated = false;
+  const strip = document.querySelector('.stats-strip');
+  if (!strip) return;
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && !animated) {
+        animated = true;
+        statNumbers.forEach((el) => {
+          const target = parseInt(el.dataset.target, 10);
+          const duration = 1400;
+          const start = performance.now();
+          function tick(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.round(target * eased);
+            if (progress < 1) requestAnimationFrame(tick);
+          }
+          requestAnimationFrame(tick);
+        });
+        counterObserver.disconnect();
+      }
+    });
+  }, { threshold: 0.3 });
+  counterObserver.observe(strip);
+})();
+
 bindInquiryTriggers();
 bindFooterInfoActions();
 scheduleInquiryModalWarmup();
