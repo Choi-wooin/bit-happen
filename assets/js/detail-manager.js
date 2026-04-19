@@ -8,7 +8,7 @@ const message = document.getElementById('detail-message');
 const videoUploadInput = document.getElementById('detail-video-upload');
 
 const DETAIL_STATE_KEY_DEFAULT = 'detailOverrides';
-const DETAIL_MEDIA_HOST = 'media.bithappen.kr';
+const DETAIL_MEDIA_HOST = 'media.bithappen.kr:4443';
 const IMAGE_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 const VIDEO_MAX_SIZE_BYTES = 100 * 1024 * 1024;
 const IMAGE_ALLOWED_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg']);
@@ -38,15 +38,16 @@ function resolveCkeditorConstructor() {
 }
 
 function getPreferredMediaProtocol() {
-  return window.location.protocol === 'http:' ? 'http:' : 'https:';
+  return 'https:';
 }
 
 function getDetailMediaBaseUrl() {
   return `${getPreferredMediaProtocol()}//${DETAIL_MEDIA_HOST}`;
 }
 
-function getDetailMediaUploadUrlDefault() {
-  return `${getDetailMediaBaseUrl()}/upload`;
+function getDetailMediaUploadUrl(type) {
+  const folder = type === 'video' ? 'videos' : 'images';
+  return `${getDetailMediaBaseUrl()}/upload/${folder}`;
 }
 
 const GROUP_LABELS = {
@@ -67,13 +68,11 @@ function getSupabaseConfig() {
   const url = String(cfg.url || '').trim().replace(/\/$/, '');
   const anonKey = String(cfg.anonKey || '').trim();
   const detailStateKey = String(cfg.detailStateKey || DETAIL_STATE_KEY_DEFAULT).trim() || DETAIL_STATE_KEY_DEFAULT;
-  const mediaUploadUrl = String(cfg.mediaUploadUrl || getDetailMediaUploadUrlDefault()).trim() || getDetailMediaUploadUrlDefault();
   return {
     enabled: Boolean(url && anonKey),
     url,
     anonKey,
     detailStateKey,
-    mediaUploadUrl,
   };
 }
 
@@ -121,8 +120,8 @@ function normalizeUploadedMediaUrl(url) {
   const raw = String(url || '').trim();
   if (!raw) return '';
 
-  if (/^https?:\/\/media\.bithappen\.kr\//i.test(raw)) {
-    return raw.replace(/^https?:/i, getPreferredMediaProtocol());
+  if (/^https?:\/\/media\.bithappen\.kr(:\d+)?\//i.test(raw)) {
+    return raw.replace(/^http:/i, 'https:');
   }
 
   if (/^\/\//.test(raw)) {
@@ -244,14 +243,11 @@ function extractUploadedMediaUrl(result, type) {
 }
 
 async function uploadEditorMedia(blob, type) {
-  const uploadUrl = getSupabaseConfig().mediaUploadUrl;
+  const uploadUrl = getDetailMediaUploadUrl(type);
   const uploadFileName = buildUploadFileName(blob, type);
   validateUploadFile(blob, type);
   const formData = new FormData();
   formData.append('file', blob, uploadFileName);
-  if (type === 'image') {
-    formData.append('image', blob, uploadFileName);
-  }
 
   const response = await fetch(uploadUrl, {
     method: 'POST',

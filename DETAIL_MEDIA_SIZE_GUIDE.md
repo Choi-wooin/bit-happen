@@ -34,7 +34,7 @@ style="--detail-media-height-pc: 600px; --detail-media-tablet-ratio: 0.8; --deta
 ```html
 <figure>
   <img
-    src="https://media.bithappen.kr/images/sample.webp"
+    src="https://media.bithappen.kr:4443/images/sample.webp"
     alt="이미지 설명"
     class="detail-image-size detail-media-size"
     style="--detail-media-height-pc: 600px; --detail-media-tablet-ratio: 0.8; --detail-media-phone-ratio: 0.6;"
@@ -59,8 +59,8 @@ style="--detail-media-height-pc: 600px; --detail-media-tablet-ratio: 0.8; --deta
   class="detail-editor-video detail-media-size"
   style="--detail-media-height-pc: 600px; --detail-media-tablet-ratio: 0.8; --detail-media-phone-ratio: 0.6;"
 >
-  <video controls playsinline preload="metadata" src="https://media.bithappen.kr/videos/sample.mp4">
-    <source src="https://media.bithappen.kr/videos/sample.mp4" type="video/mp4" />
+  <video controls playsinline preload="metadata" src="https://media.bithappen.kr:4443/videos/sample.mp4">
+    <source src="https://media.bithappen.kr:4443/videos/sample.mp4" type="video/mp4" />
   </video>
 </div>
 <p>동영상 설명</p>
@@ -133,8 +133,8 @@ style="--detail-media-height-pc: 600px;"
   <table>
     <tbody>
       <tr>
-        <td><img src="https://media.bithappen.kr/images/sample.webp" /></td>
-        <td><img src="https://media.bithappen.kr/images/sample2.webp" /></td>
+        <td><img src="https://media.bithappen.kr:4443/images/sample.webp" /></td>
+        <td><img src="https://media.bithappen.kr:4443/images/sample2.webp" /></td>
       </tr>
     </tbody>
   </table>
@@ -150,9 +150,9 @@ style="--detail-media-height-pc: 600px;"
   <table class="borderless">
     <tbody>
       <tr>
-        <td><img src="https://media.bithappen.kr/images/a.webp" /></td>
-        <td><img src="https://media.bithappen.kr/images/b.webp" /></td>
-        <td><img src="https://media.bithappen.kr/images/c.webp" /></td>
+        <td><img src="https://media.bithappen.kr:4443/images/a.webp" /></td>
+        <td><img src="https://media.bithappen.kr:4443/images/b.webp" /></td>
+        <td><img src="https://media.bithappen.kr:4443/images/c.webp" /></td>
       </tr>
     </tbody>
   </table>

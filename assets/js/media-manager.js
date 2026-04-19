@@ -6,6 +6,7 @@ if (!__session) {
 const STORAGE_KEY = 'bitHappenMediaLibrary_v1';
 const LIBRARY_FILE_NAME = 'media-library.js';
 const MEDIA_BASE_PATH = 'assets/media/';
+const MEDIA_SERVER_BASE_URL = 'https://media.bithappen.kr:4443';
 const DEFAULT_MEDIA_STATE_KEY = 'mediaLibrary';
 const MEDIA_DIR_DB_NAME = 'bitHappenMediaDirectory';
 const MEDIA_DIR_STORE_NAME = 'handles';
@@ -636,8 +637,6 @@ async function addLocalImagesAsWebpAssets() {
     throw new Error('로컬 이미지를 여러 개 선택한 경우에는 미디어 파일명을 비워 두세요. 한 개 선택했을 때만 직접 파일명을 지정할 수 있습니다.');
   }
 
-  await ensureMediaDirectoryHandle();
-
   const current = loadLibrary();
   let uploadedCount = 0;
   let representativeAssigned = false;
@@ -650,7 +649,7 @@ async function addLocalImagesAsWebpAssets() {
       ? buildCustomWebpFileName(customFileName, index, files.length)
       : replaceExtensionWithWebp(file.name);
     const converted = await convertLocalImageFileToWebp(file, preferredFileName);
-    await writeBlobToMediaDirectory(converted.fileName, converted.blob);
+    const serverUrl = await uploadToMediaServer(converted.blob, 'image', converted.fileName);
 
     const isRepresentative = wantsRepresentative && representativeAssigned === false;
     if (isRepresentative) {
@@ -663,7 +662,7 @@ async function addLocalImagesAsWebpAssets() {
         mediaType: 'image',
         title: files.length === 1 && title ? title : stripFileExtension(converted.fileName),
         fileName: converted.fileName,
-        src: toMediaAssetUrl(converted.fileName),
+        src: serverUrl,
         width: converted.width,
         height: converted.height,
         isRepresentative,
@@ -693,11 +692,11 @@ async function addLocalImagesAsWebpAssets() {
   renderLibrary();
 
   if (result.remote === false) {
-    alert('WebP 파일은 assets/media와 로컬 라이브러리에 저장되었지만 Supabase 동기화에는 실패했습니다.');
+    alert('이미지를 미디어 서버에 업로드했지만 Supabase 동기화에는 실패했습니다.');
     return true;
   }
 
-  alert(`${uploadedCount}개 이미지를 WebP로 변환해 assets/media에 저장하고 라이브러리에 추가했습니다.`);
+  alert(`${uploadedCount}개 이미지를 WebP로 변환해 미디어 서버에 업로드하고 라이브러리에 추가했습니다.`);
   return true;
 }
 
@@ -775,6 +774,34 @@ function normalizeMediaFileName(value) {
 
 function toMediaAssetUrl(fileName) {
   return `${MEDIA_BASE_PATH}${fileName}`;
+}
+
+function toMediaServerUrl(fileName, type) {
+  const folder = type === 'video' ? 'videos' : 'images';
+  return `${MEDIA_SERVER_BASE_URL}/${folder}/${fileName}`;
+}
+
+async function uploadToMediaServer(blob, type, fileName) {
+  const folder = type === 'video' ? 'videos' : 'images';
+  const uploadUrl = `${MEDIA_SERVER_BASE_URL}/upload/${folder}`;
+  const formData = new FormData();
+  formData.append('file', blob, fileName);
+
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`${type === 'video' ? '동영상' : '이미지'} 미디어 서버 업로드 실패: ${response.status}`);
+  }
+
+  const result = await response.json();
+  const candidate = result.imageUrl || result.videoUrl || result.mediaUrl || result.url || result.fileUrl || '';
+  if (candidate) {
+    return String(candidate).replace(/^http:/i, 'https:');
+  }
+  return `${MEDIA_SERVER_BASE_URL}/${folder}/${fileName}`;
 }
 
 function resolveUrlMediaType(url, selectedType) {
@@ -1087,15 +1114,14 @@ function renderUrlPreview() {
     return;
   }
 
-  const url = toMediaAssetUrl(fileName);
-
-  const mediaType = resolveUrlMediaType(url, selectedType);
+  const mediaType = resolveUrlMediaType(fileName, selectedType);
   if (!mediaType) {
     urlPreviewRoot.innerHTML =
       '<p class="empty">URL 타입 자동 판별에 실패했습니다. URL 타입을 직접 선택해 주세요.</p>';
     return;
   }
 
+  const url = toMediaServerUrl(fileName, mediaType);
   const title = String(titleInput.value || '').trim() || fileName || mediaType;
   const preview =
     mediaType === 'video'
@@ -1164,8 +1190,6 @@ form.addEventListener('submit', async (event) => {
       throw new Error('동영상을 여러 개 선택한 경우에는 미디어 파일명을 비워 두세요. 한 개 선택했을 때만 직접 파일명을 지정할 수 있습니다.');
     }
 
-    await ensureMediaDirectoryHandle();
-
     for (let index = 0; index < files.length; index += 1) {
       const file = files[index];
       const mediaType = detectMediaType(file);
@@ -1184,13 +1208,7 @@ form.addEventListener('submit', async (event) => {
       const targetFileName = customFileName
         ? buildUploadedMediaFileName(customFileName, file.name, index, files.length)
         : file.name;
-      const writtenFile = await writeBlobToMediaDirectory(targetFileName, file);
-      if (writtenFile.name !== targetFileName) {
-        throw new Error(`assets/media/${targetFileName} 파일 저장 이름이 예상과 다릅니다.`);
-      }
-      if (writtenFile.size !== file.size) {
-        throw new Error(`assets/media/${targetFileName} 파일 저장 크기 검증에 실패했습니다.`);
-      }
+      const serverUrl = await uploadToMediaServer(file, 'video', targetFileName);
 
       const previewUrl = URL.createObjectURL(file);
       let size = { width: 0, height: 0 };
@@ -1206,7 +1224,7 @@ form.addEventListener('submit', async (event) => {
           mediaType,
           title: files.length === 1 && title ? title : stripFileExtension(targetFileName),
           fileName: targetFileName,
-          src: toMediaAssetUrl(targetFileName),
+          src: serverUrl,
           poster: '',
           width: size.width,
           height: size.height,
@@ -1241,7 +1259,7 @@ form.addEventListener('submit', async (event) => {
     makeCardOptions();
     renderLibrary();
     if (result.remote === false) {
-      alert('동영상 파일은 assets/media와 로컬 라이브러리에 저장되었지만 Supabase 동기화에는 실패했습니다.');
+      alert('동영상을 미디어 서버에 업로드했지만 Supabase 동기화에는 실패했습니다.');
       return;
     }
     const savedNames = current
@@ -1249,7 +1267,7 @@ form.addEventListener('submit', async (event) => {
       .map((item) => item.fileName)
       .filter(Boolean)
       .join(', ');
-    alert(`${uploadedCount}개 동영상 파일을 assets/media에 저장하고 라이브러리에 등록했습니다. 저장 파일명: ${savedNames}`);
+    alert(`${uploadedCount}개 동영상을 미디어 서버에 업로드하고 라이브러리에 등록했습니다. 파일명: ${savedNames}`);
   } catch (error) {
     alert(error instanceof Error ? error.message : '업로드 저장 중 오류가 발생했습니다.');
   }
@@ -1298,13 +1316,13 @@ addMediaUrlButton.addEventListener('click', async (event) => {
     return;
   }
 
-  const url = toMediaAssetUrl(fileName);
-
-  const mediaType = resolveUrlMediaType(url, selectedType);
+  const mediaType = resolveUrlMediaType(fileName, selectedType);
   if (!mediaType) {
     alert('URL 타입을 자동 판별하지 못했습니다. 타입을 이미지/동영상으로 직접 선택해 주세요.');
     return;
   }
+
+  const url = toMediaServerUrl(fileName, mediaType);
 
   try {
     const size = mediaType === 'video' ? await getVideoSize(url) : await getImageSize(url);
