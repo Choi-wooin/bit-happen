@@ -634,6 +634,217 @@ function rememberSelectedMedia(sectionKey, target, editorRoot) {
   binding.selectedMediaIndex = mediaIndex;
 }
 
+function resolveSelectedTableFigure(target) {
+  if (!(target instanceof Element)) return null;
+  const figure = target.closest('figure.table');
+  if (figure) return figure;
+  const table = target.closest('table');
+  if (table) {
+    const parent = table.closest('figure.table');
+    return parent || table;
+  }
+  return null;
+}
+
+function rememberSelectedTable(sectionKey, target, editorRoot) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding || !editorRoot) return;
+
+  const tableElement = resolveSelectedTableFigure(target);
+  if (!tableElement || !editorRoot.contains(tableElement)) return;
+
+  const allTables = Array.from(editorRoot.querySelectorAll('figure.table, table'));
+  const tableIndex = allTables.indexOf(tableElement);
+  if (tableIndex < 0) return;
+
+  binding.selectedTableIndex = tableIndex;
+
+  const cell = target instanceof Element ? target.closest('td, th') : null;
+  binding.selectedColIndex = cell ? cell.cellIndex : undefined;
+}
+
+function applySelectedTableWidth(sectionKey, widthPx) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding) return false;
+
+  if (!Number.isFinite(Number(widthPx)) || Number(widthPx) <= 0) {
+    setMessage('유효한 너비(px)를 입력해 주세요.');
+    return false;
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = getSectionSourceHtml(sectionKey) || getEditorHtml(sectionKey);
+  const allTables = Array.from(wrapper.querySelectorAll('figure.table, table'));
+  const tableIndex = Number(binding.selectedTableIndex);
+  const target = Number.isInteger(tableIndex) ? allTables[tableIndex] : null;
+
+  if (!target) {
+    setMessage('너비를 바꿀 표를 먼저 클릭해 주세요.');
+    return false;
+  }
+
+  const normalizedWidth = `${Math.max(100, Number(widthPx))}px`;
+  target.style.setProperty('width', normalizedWidth);
+
+  setEditorHtml(sectionKey, wrapper.innerHTML);
+  setMessage(`선택한 표 너비를 ${normalizedWidth}로 변경했습니다.`, false);
+  return true;
+}
+
+function getSelectedTableCurrentWidth(sectionKey) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding) return '';
+  const tableIndex = Number(binding.selectedTableIndex);
+  if (!Number.isInteger(tableIndex)) return '';
+
+  // 1) 소스 HTML에서 읽기
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = getSectionSourceHtml(sectionKey) || getEditorHtml(sectionKey);
+  const allTables = Array.from(wrapper.querySelectorAll('figure.table, table'));
+  const target = allTables[tableIndex];
+  if (target) {
+    const w = target.style.getPropertyValue('width') || target.getAttribute('width');
+    if (w) { const n = parseInt(w, 10); if (n > 0) return n; }
+  }
+
+  // 2) 렌더링된 에디터 DOM에서 읽기
+  const editableRoot = binding.editableRoot;
+  if (editableRoot) {
+    const liveTables = Array.from(editableRoot.querySelectorAll('figure.table, table'));
+    const liveTarget = liveTables[tableIndex];
+    if (liveTarget) {
+      const w = liveTarget.style.getPropertyValue('width') || liveTarget.getAttribute('width');
+      if (w) { const n = parseInt(w, 10); if (n > 0) return n; }
+      const computed = liveTarget.getBoundingClientRect().width;
+      if (computed > 0) return Math.round(computed);
+    }
+  }
+
+  return '';
+}
+
+function promptAndApplyTableWidth(sectionKey) {
+  const currentWidth = getSelectedTableCurrentWidth(sectionKey);
+  const defaultVal = currentWidth || '600';
+  const input = window.prompt(`표 너비(px)를 입력해 주세요.${currentWidth ? ' (현재: ' + currentWidth + 'px)' : ''}`, String(defaultVal));
+  if (input === null) return;
+
+  const widthPx = Number(String(input).trim());
+  applySelectedTableWidth(sectionKey, widthPx);
+}
+
+function findTableElementInWrapper(wrapper, tableIndex) {
+  const allTables = Array.from(wrapper.querySelectorAll('figure.table, table'));
+  return Number.isInteger(tableIndex) ? allTables[tableIndex] : null;
+}
+
+function getActualTable(target) {
+  if (target.tagName === 'TABLE') return target;
+  return target.querySelector('table');
+}
+
+function applySelectedColWidth(sectionKey, widthPx) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding) return false;
+
+  const colIndex = binding.selectedColIndex;
+  if (!Number.isInteger(colIndex) || colIndex < 0) {
+    setMessage('너비를 바꿀 컬럼(셀)을 먼저 클릭해 주세요.');
+    return false;
+  }
+  if (!Number.isFinite(Number(widthPx)) || Number(widthPx) <= 0) {
+    setMessage('유효한 너비(px)를 입력해 주세요.');
+    return false;
+  }
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = getSectionSourceHtml(sectionKey) || getEditorHtml(sectionKey);
+  const tableIndex = Number(binding.selectedTableIndex);
+  const figureOrTable = findTableElementInWrapper(wrapper, tableIndex);
+  if (!figureOrTable) {
+    setMessage('너비를 바꿀 표를 먼저 클릭해 주세요.');
+    return false;
+  }
+
+  const table = getActualTable(figureOrTable);
+  if (!table) {
+    setMessage('표를 찾을 수 없습니다.');
+    return false;
+  }
+
+  const normalizedWidth = `${Math.max(20, Number(widthPx))}px`;
+
+  Array.from(table.rows).forEach((row) => {
+    const cell = row.cells[colIndex];
+    if (cell) cell.style.setProperty('width', normalizedWidth);
+  });
+
+  setEditorHtml(sectionKey, wrapper.innerHTML);
+  setMessage(`${colIndex + 1}번째 컬럼 너비를 ${normalizedWidth}로 변경했습니다.`, false);
+  return true;
+}
+
+function getSelectedColCurrentWidth(sectionKey) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding) return '';
+  const tableIndex = Number(binding.selectedTableIndex);
+  const colIndex = binding.selectedColIndex;
+  if (!Number.isInteger(tableIndex) || !Number.isInteger(colIndex)) return '';
+
+  // 1) 소스 HTML의 셀 style에서 읽기
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = getSectionSourceHtml(sectionKey) || getEditorHtml(sectionKey);
+  const figureOrTable = findTableElementInWrapper(wrapper, tableIndex);
+  if (figureOrTable) {
+    const table = getActualTable(figureOrTable);
+    if (table) {
+      const firstRow = table.rows[0];
+      const cell = firstRow?.cells[colIndex];
+      if (cell) {
+        const w = cell.style.getPropertyValue('width') || cell.getAttribute('width');
+        if (w) { const n = parseInt(w, 10); if (n > 0) return n; }
+      }
+    }
+  }
+
+  // 2) 렌더링된 에디터 DOM에서 읽기
+  const editableRoot = binding.editableRoot;
+  if (editableRoot) {
+    const liveTables = Array.from(editableRoot.querySelectorAll('figure.table, table'));
+    const liveTarget = liveTables[tableIndex];
+    if (liveTarget) {
+      const liveTable = liveTarget.tagName === 'TABLE' ? liveTarget : liveTarget.querySelector('table');
+      if (liveTable) {
+        const liveCell = liveTable.rows[0]?.cells[colIndex];
+        if (liveCell) {
+          const w = liveCell.style.getPropertyValue('width') || liveCell.getAttribute('width');
+          if (w) { const n = parseInt(w, 10); if (n > 0) return n; }
+          const computed = liveCell.getBoundingClientRect().width;
+          if (computed > 0) return Math.round(computed);
+        }
+      }
+    }
+  }
+
+  return '';
+}
+
+function promptAndApplyColWidth(sectionKey) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding || !Number.isInteger(binding.selectedColIndex)) {
+    setMessage('너비를 바꿀 컬럼(셀)을 먼저 클릭해 주세요.');
+    return;
+  }
+  const colNum = binding.selectedColIndex + 1;
+  const currentWidth = getSelectedColCurrentWidth(sectionKey);
+  const defaultVal = currentWidth || '200';
+  const input = window.prompt(`${colNum}번째 컬럼 너비(px)를 입력해 주세요.${currentWidth ? ' (현재: ' + currentWidth + 'px)' : ''}`, String(defaultVal));
+  if (input === null) return;
+
+  const widthPx = Number(String(input).trim());
+  applySelectedColWidth(sectionKey, widthPx);
+}
+
 function convertFigureMediaToVideoBlock(figure) {
   const videoUrl = normalizeUploadedMediaUrl(figure.querySelector('oembed')?.getAttribute('url') || '');
   if (!videoUrl) return figure;
@@ -701,8 +912,39 @@ function applySelectedMediaSize(sectionKey, heightPx) {
   return true;
 }
 
+function getSelectedMediaCurrentHeight(sectionKey) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding) return '';
+  const mediaIndex = Number(binding.selectedMediaIndex);
+  if (!Number.isInteger(mediaIndex) || mediaIndex < 0) return '';
+
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = getSectionSourceHtml(sectionKey) || getEditorHtml(sectionKey);
+  const mediaElements = getSelectableMediaElements(wrapper);
+  const target = mediaElements[mediaIndex];
+  if (target) {
+    const h = target.style.getPropertyValue('--detail-media-height-pc');
+    if (h) { const n = parseInt(h, 10); if (n > 0) return n; }
+  }
+
+  const editableRoot = binding.editableRoot;
+  if (editableRoot) {
+    const liveMedia = getSelectableMediaElements(editableRoot);
+    const liveTarget = liveMedia[mediaIndex];
+    if (liveTarget) {
+      const h = liveTarget.style.getPropertyValue('--detail-media-height-pc');
+      if (h) { const n = parseInt(h, 10); if (n > 0) return n; }
+      const computed = liveTarget.getBoundingClientRect().height;
+      if (computed > 0) return Math.round(computed);
+    }
+  }
+  return '';
+}
+
 function promptAndApplyMediaSize(sectionKey) {
-  const input = window.prompt('PC 높이(px)를 입력해 주세요.', '600');
+  const currentHeight = getSelectedMediaCurrentHeight(sectionKey);
+  const defaultVal = currentHeight || '600';
+  const input = window.prompt(`PC 높이(px)를 입력해 주세요.${currentHeight ? ' (현재: ' + currentHeight + 'px)' : ''}`, String(defaultVal));
   if (input === null) return;
 
   const heightPx = Number(String(input).trim());
@@ -718,6 +960,11 @@ function selectSourceRange(sectionKey, start, end) {
   const safeEnd = Math.max(safeStart, Math.min(Number(end || safeStart), value.length));
   binding.sourceInput.focus();
   binding.sourceInput.setSelectionRange(safeStart, safeEnd);
+
+  const linesBefore = value.substring(0, safeStart).split('\n').length;
+  const totalLines = value.split('\n').length;
+  const scrollRatio = totalLines > 1 ? (linesBefore - 1) / totalLines : 0;
+  binding.sourceInput.scrollTop = Math.max(0, binding.sourceInput.scrollHeight * scrollRatio - binding.sourceInput.clientHeight / 3);
   return true;
 }
 
@@ -801,10 +1048,20 @@ function syncSourceSelectionToEditor(sectionKey) {
 
 function revealEditorSelectionInSource(sectionKey) {
   syncSourceFromEditor(sectionKey);
+
+  const binding = getEditorBinding(sectionKey);
+  if (binding?.sourcePanel) {
+    binding.sourcePanel.style.display = '';
+  }
+
   const found = syncSourceSelectionToEditor(sectionKey);
   if (!found) {
     setMessage('에디터에서 선택한 내용과 일치하는 HTML 소스를 찾지 못했습니다. 이미지/동영상 또는 고유한 텍스트를 선택해 주세요.');
     return false;
+  }
+
+  if (binding?.sourceInput) {
+    binding.sourceInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   setMessage('선택한 위치에 해당하는 HTML 소스를 표시했습니다.', false);
@@ -1042,6 +1299,22 @@ function syncRenderedMediaAttributesFromSource(sectionKey, sourceHtml) {
     Array.from(sourceTable.classList).forEach((cls) => {
       renderedTable.classList.add(cls);
     });
+    const sourceColgroup = sourceTable.querySelector('colgroup');
+    if (sourceColgroup && !renderedTable.querySelector('colgroup')) {
+      renderedTable.insertBefore(sourceColgroup.cloneNode(true), renderedTable.firstChild);
+    } else if (sourceColgroup && renderedTable.querySelector('colgroup')) {
+      renderedTable.querySelector('colgroup').replaceWith(sourceColgroup.cloneNode(true));
+    }
+    Array.from(sourceTable.rows).forEach((sourceRow, rowIndex) => {
+      const renderedRow = renderedTable.rows[rowIndex];
+      if (!renderedRow) return;
+      Array.from(sourceRow.cells).forEach((sourceCell, cellIndex) => {
+        const renderedCell = renderedRow.cells[cellIndex];
+        if (!renderedCell) return;
+        const w = sourceCell.style.getPropertyValue('width');
+        if (w) renderedCell.style.setProperty('width', w);
+      });
+    });
   });
 
   const sourceTableFigures = Array.from(sourceWrapper.querySelectorAll('figure.table'));
@@ -1162,8 +1435,19 @@ function cacheMediaSizingFromHtml(html) {
 
   Array.from(wrapper.querySelectorAll('table')).forEach((table, index) => {
     const classList = Array.from(table.classList).filter(Boolean);
-    if (classList.length) {
-      mediaSizingCache.set(`__table_${index}`, { sizing: {}, classes: classList });
+    const colgroup = table.querySelector('colgroup');
+    const colgroupHtml = colgroup ? colgroup.outerHTML : '';
+    if (classList.length || colgroupHtml) {
+      mediaSizingCache.set(`__table_${index}`, { sizing: {}, classes: classList, colgroupHtml });
+    }
+  });
+
+  Array.from(wrapper.querySelectorAll('figure.table')).forEach((figure, index) => {
+    const width = figure.style.getPropertyValue('width').trim();
+    const marginLeft = figure.style.getPropertyValue('margin-left').trim();
+    const marginRight = figure.style.getPropertyValue('margin-right').trim();
+    if (width || marginLeft || marginRight) {
+      mediaSizingCache.set(`__table_figure_${index}`, { width, marginLeft, marginRight });
     }
   });
 }
@@ -1197,6 +1481,20 @@ function restoreMediaSizingToHtml(html) {
     if (cached && cached.classes) {
       cached.classes.forEach((cls) => table.classList.add(cls));
     }
+    if (cached && cached.colgroupHtml && !table.querySelector('colgroup')) {
+      const temp = document.createElement('table');
+      temp.innerHTML = cached.colgroupHtml;
+      const restoredColgroup = temp.querySelector('colgroup');
+      if (restoredColgroup) table.insertBefore(restoredColgroup, table.firstChild);
+    }
+  });
+
+  Array.from(wrapper.querySelectorAll('figure.table')).forEach((figure, index) => {
+    const cached = mediaSizingCache.get(`__table_figure_${index}`);
+    if (!cached) return;
+    if (cached.width && !figure.style.getPropertyValue('width')) figure.style.setProperty('width', cached.width);
+    if (cached.marginLeft && !figure.style.getPropertyValue('margin-left')) figure.style.setProperty('margin-left', cached.marginLeft);
+    if (cached.marginRight && !figure.style.getPropertyValue('margin-right')) figure.style.setProperty('margin-right', cached.marginRight);
   });
 
   return wrapper.innerHTML;
@@ -1666,6 +1964,7 @@ function registerEditorMediaInteractions(sectionKey, editorRoot) {
 
   editableRoot.addEventListener('click', (event) => {
     rememberSelectedMedia(sectionKey, event.target, editableRoot);
+    rememberSelectedTable(sectionKey, event.target, editableRoot);
   });
 
   editableRoot.addEventListener('drop', async (event) => {
@@ -1962,16 +2261,20 @@ form.addEventListener('click', (event) => {
     revealEditorSelectionInSource(sectionKey);
     return;
   }
-  if (action === 'media-size') {
-    applySelectedMediaSize(sectionKey, Number(button.getAttribute('data-media-size')));
-    return;
-  }
-  if (action === 'media-size-custom') {
+  if (action === 'media-width-custom') {
     promptAndApplyMediaSize(sectionKey);
     return;
   }
   if (action === 'insert-table') {
     insertTemplate(sectionKey, buildTableSnippet());
+    return;
+  }
+  if (action === 'table-width-custom') {
+    promptAndApplyTableWidth(sectionKey);
+    return;
+  }
+  if (action === 'col-width-custom') {
+    promptAndApplyColWidth(sectionKey);
   }
 });
 
