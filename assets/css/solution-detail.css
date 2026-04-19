@@ -466,24 +466,6 @@ h1 {
   margin: 0 0 6px;
 }
 
-.related-list {
-  display: grid;
-  gap: 8px;
-}
-
-.related-item {
-  border: 1px solid var(--line);
-  padding: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.related-item a {
-  color: var(--brand);
-  font-weight: 700;
-}
-
 .media-head {
   display: flex;
   align-items: center;

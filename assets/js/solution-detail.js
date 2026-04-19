@@ -427,12 +427,7 @@ async function getSupabaseMediaItemsByCardId(cardId) {
 
 function renderMediaSection(mediaItems) {
   if (!mediaItems.length) {
-    return `
-      <section class="section">
-        <h2>이미지 / 동영상</h2>
-        <p class="media-empty">등록된 미디어가 없습니다.</p>
-      </section>
-    `;
+    return '';
   }
 
   return `
@@ -784,17 +779,6 @@ async function render() {
     ? overrideMedia
     : cardMedia;
 
-  const related = cards
-    .filter((item) => item.enabled !== false && item.id !== card.id && sharesAnyGroup(item, card))
-    .slice(0, 3)
-    .map(
-      (item) =>
-        `<div class="related-item"><span>${esc(item.title)}</span><a href="../pages/solution-detail.html?id=${encodeURIComponent(
-          item.id
-        )}">상세보기</a></div>`
-    )
-    .join('');
-
   document.title = `BIT HAPPENS | ${card.title}`;
 
   root.innerHTML = `
@@ -823,11 +807,6 @@ async function render() {
     <div class="section-cta">
       <a class="btn primary" href="${inquiryFormUrl}" data-inquiry-trigger aria-haspopup="dialog" aria-controls="inquiry-modal">도입 문의</a>
     </div>
-
-    <section class="section">
-      <h2>관련 솔루션</h2>
-      <div class="related-list">${related || '<p>관련 솔루션이 없습니다.</p>'}</div>
-    </section>
   `;
 
   attachMediaInteractions(mediaItems);
