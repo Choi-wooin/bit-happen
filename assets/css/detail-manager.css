@@ -91,7 +91,21 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
   justify-content: flex-end;
+}
+
+.editor-tools .btn-group {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.editor-tools .btn-group-media {
+  padding: 2px 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #f8f9fb;
 }
 
 .editor-tools button,

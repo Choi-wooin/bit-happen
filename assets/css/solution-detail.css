@@ -66,9 +66,6 @@ main {
   background: var(--surface);
   border: 1px solid var(--line);
   padding: clamp(20px, 4vw, 34px);
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 16px;
 }
 
 .hero-badges {
@@ -168,19 +165,6 @@ h1 {
   border-color: var(--line);
 }
 
-.hero-meta {
-  border: 1px solid var(--line);
-  padding: 14px;
-  display: grid;
-  gap: 8px;
-  background: #fbfdff;
-}
-
-.hero-meta p {
-  margin: 0;
-  font-size: 0.9rem;
-}
-
 .section {
   margin-top: 18px;
   background: #fff;
@@ -204,6 +188,14 @@ h1 {
 .section h2 {
   font-family: "Manrope", sans-serif;
   margin-bottom: 10px;
+}
+
+h2.rich-section-title {
+  margin: 0 -18px 14px;
+  padding: 0 18px 12px;
+  border-bottom: 2px solid var(--brand);
+  color: var(--brand);
+  font-size: 1.35rem;
 }
 
 .rich-section-body {

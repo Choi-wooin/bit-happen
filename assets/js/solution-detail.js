@@ -349,11 +349,12 @@ function convertOembedToIframes(html) {
 
 function renderRichDetailSection(title, html) {
   var raw = String(html || '').trim();
-  var processed = raw ? convertOembedToIframes(raw) : '';
+  if (!hasMeaningfulHtml(raw)) return '';
+  var processed = convertOembedToIframes(raw);
   return `
     <section class="section rich-section">
-      <h2>${esc(title)}</h2>
-      <div class="rich-section-body${processed ? '' : ' is-empty'}">${processed}</div>
+      <h2 class="rich-section-title">${esc(title)}</h2>
+      <div class="rich-section-body">${processed}</div>
     </section>
   `;
 }
@@ -791,9 +792,6 @@ async function render() {
           <a class="btn primary" href="${inquiryFormUrl}" data-inquiry-trigger aria-haspopup="dialog" aria-controls="inquiry-modal">도입 문의</a>
         </div>
       </div>
-      <aside class="hero-meta">
-        <p><strong>사업 영역:</strong> ${esc(cardGroups.map((group) => getGroupLabel(group)).join(', '))}</p>
-      </aside>
     </section>
 
     ${renderRichDetailSection('개발의도 / 필요성 / 개념', detailSections.intentHtml)}

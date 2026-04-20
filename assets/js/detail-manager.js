@@ -663,76 +663,6 @@ function rememberSelectedTable(sectionKey, target, editorRoot) {
   binding.selectedColIndex = cell ? cell.cellIndex : undefined;
 }
 
-function applySelectedTableWidth(sectionKey, widthPx) {
-  const binding = getEditorBinding(sectionKey);
-  if (!binding) return false;
-
-  if (!Number.isFinite(Number(widthPx)) || Number(widthPx) <= 0) {
-    setMessage('유효한 너비(px)를 입력해 주세요.');
-    return false;
-  }
-
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = getSectionSourceHtml(sectionKey) || getEditorHtml(sectionKey);
-  const allTables = Array.from(wrapper.querySelectorAll('figure.table, table'));
-  const tableIndex = Number(binding.selectedTableIndex);
-  const target = Number.isInteger(tableIndex) ? allTables[tableIndex] : null;
-
-  if (!target) {
-    setMessage('너비를 바꿀 표를 먼저 클릭해 주세요.');
-    return false;
-  }
-
-  const normalizedWidth = `${Math.max(100, Number(widthPx))}px`;
-  target.style.setProperty('width', normalizedWidth);
-
-  setEditorHtml(sectionKey, wrapper.innerHTML);
-  setMessage(`선택한 표 너비를 ${normalizedWidth}로 변경했습니다.`, false);
-  return true;
-}
-
-function getSelectedTableCurrentWidth(sectionKey) {
-  const binding = getEditorBinding(sectionKey);
-  if (!binding) return '';
-  const tableIndex = Number(binding.selectedTableIndex);
-  if (!Number.isInteger(tableIndex)) return '';
-
-  // 1) 소스 HTML에서 읽기
-  const wrapper = document.createElement('div');
-  wrapper.innerHTML = getSectionSourceHtml(sectionKey) || getEditorHtml(sectionKey);
-  const allTables = Array.from(wrapper.querySelectorAll('figure.table, table'));
-  const target = allTables[tableIndex];
-  if (target) {
-    const w = target.style.getPropertyValue('width') || target.getAttribute('width');
-    if (w) { const n = parseInt(w, 10); if (n > 0) return n; }
-  }
-
-  // 2) 렌더링된 에디터 DOM에서 읽기
-  const editableRoot = binding.editableRoot;
-  if (editableRoot) {
-    const liveTables = Array.from(editableRoot.querySelectorAll('figure.table, table'));
-    const liveTarget = liveTables[tableIndex];
-    if (liveTarget) {
-      const w = liveTarget.style.getPropertyValue('width') || liveTarget.getAttribute('width');
-      if (w) { const n = parseInt(w, 10); if (n > 0) return n; }
-      const computed = liveTarget.getBoundingClientRect().width;
-      if (computed > 0) return Math.round(computed);
-    }
-  }
-
-  return '';
-}
-
-function promptAndApplyTableWidth(sectionKey) {
-  const currentWidth = getSelectedTableCurrentWidth(sectionKey);
-  const defaultVal = currentWidth || '600';
-  const input = window.prompt(`표 너비(px)를 입력해 주세요.${currentWidth ? ' (현재: ' + currentWidth + 'px)' : ''}`, String(defaultVal));
-  if (input === null) return;
-
-  const widthPx = Number(String(input).trim());
-  applySelectedTableWidth(sectionKey, widthPx);
-}
-
 function findTableElementInWrapper(wrapper, tableIndex) {
   const allTables = Array.from(wrapper.querySelectorAll('figure.table, table'));
   return Number.isInteger(tableIndex) ? allTables[tableIndex] : null;
@@ -2267,10 +2197,6 @@ form.addEventListener('click', (event) => {
   }
   if (action === 'insert-table') {
     insertTemplate(sectionKey, buildTableSnippet());
-    return;
-  }
-  if (action === 'table-width-custom') {
-    promptAndApplyTableWidth(sectionKey);
     return;
   }
   if (action === 'col-width-custom') {
