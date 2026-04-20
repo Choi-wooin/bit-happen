@@ -2170,7 +2170,7 @@ body.inquiry-modal-open {
   }
 
   .capability-card-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -2185,7 +2185,7 @@ body.inquiry-modal-open {
   }
 
   .vision-card-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .vision-card:last-child {
@@ -2193,7 +2193,7 @@ body.inquiry-modal-open {
   }
 
   .business-card-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .business-card:last-child {
