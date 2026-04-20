@@ -2430,6 +2430,43 @@ body.inquiry-modal-open {
     display: block;
   }
 
+  /* Mobile nav: override dark-theme header colors for white dropdown */
+  .header .nav a,
+  .header .nav-button {
+    color: #222;
+  }
+
+  .header .nav a:hover,
+  .header .nav-button:hover {
+    color: var(--brand);
+  }
+
+  .header .nav > ul > li > a.is-active,
+  .header .nav-button.is-active {
+    color: var(--brand);
+    background: #eef5ff;
+  }
+
+  .header .mega-menu {
+    background: #f5f7fa;
+    border-color: var(--line);
+  }
+
+  .header .submenu-list a {
+    color: #333;
+  }
+
+  .header .submenu-list a:hover,
+  .header .submenu-list a:focus-visible {
+    background: #e8eef6;
+    color: #111;
+  }
+
+  .header .submenu-list a.is-active {
+    background: #ddeaff;
+    color: var(--brand);
+  }
+
   .submenu-list {
     gap: 2px;
   }
