@@ -1877,7 +1877,7 @@ body.inquiry-modal-open {
 
 .divider-footer {
   position: absolute;
-  top: 0;
+  top: -1px;
   left: 50%;
   width: 100vw;
   transform: translateX(-50%);
