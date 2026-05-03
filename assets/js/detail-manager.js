@@ -2023,7 +2023,6 @@ async function createEditorBindings() {
             'bold',
             'italic',
             'link',
-            'alignment',
             '|',
             'bulletedList',
             'numberedList',
@@ -2042,9 +2041,6 @@ async function createEditorBindings() {
         },
         link: {
           addTargetToExternalLinks: true,
-        },
-        alignment: {
-          options: ['left', 'center', 'right', 'justify'],
         },
         image: {
           toolbar: ['imageStyle:inline', 'imageStyle:block', 'imageStyle:side', '|', 'toggleImageCaption', 'imageTextAlternative'],
