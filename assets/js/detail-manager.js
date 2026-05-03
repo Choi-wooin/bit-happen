@@ -135,7 +135,10 @@ function normalizeUploadedMediaUrl(url) {
   if (!raw) return '';
 
   if (/^https?:\/\/media\.bithappen\.kr(:\d+)?\//i.test(raw)) {
-    return raw.replace(/^http:/i, 'https:');
+    let fixed = raw.replace(/^http:/i, 'https:');
+    // Ensure :4443 port is present (only adds port if currently absent)
+    fixed = fixed.replace(/^(https:\/\/media\.bithappen\.kr)(\/)/, '$1:4443$2');
+    return fixed;
   }
 
   if (/^\/\//.test(raw)) {
@@ -1117,23 +1120,15 @@ function getMediaSourceUrl(element) {
 function copyMediaSizingStyle(sourceElement, targetElement) {
   if (!(sourceElement instanceof Element) || !(targetElement instanceof HTMLElement)) return;
 
-  const properties = [
-    '--detail-media-height-pc',
-    '--detail-media-height-tablet',
-    '--detail-media-height-phone',
-    '--detail-media-tablet-ratio',
-    '--detail-media-phone-ratio',
-    '--detail-image-height',
-    '--detail-image-height-pc',
-    '--detail-image-height-tablet',
-    '--detail-image-height-phone',
-  ];
+  const properties = ['--detail-media-width-pc'];
 
   properties.forEach((property) => {
-    targetElement.style.removeProperty(property);
     const value = sourceElement.style.getPropertyValue(property).trim();
-    if (value) {
+    const current = targetElement.style.getPropertyValue(property).trim();
+    if (value && value !== current) {
       targetElement.style.setProperty(property, value);
+    } else if (!value && current) {
+      targetElement.style.removeProperty(property);
     }
   });
 }
@@ -1177,41 +1172,18 @@ function getResponsiveMediaHeight(sizing) {
 function applyRenderedMediaSizing(sourceElement, targetElement) {
   if (!(sourceElement instanceof Element) || !(targetElement instanceof Element)) return;
 
-  const sizing = extractMediaSizing(sourceElement);
-  const computedHeight = getResponsiveMediaHeight(sizing);
-
+  // Copy --detail-media-width-pc CSS custom property from source → rendered element.
+  // Inline height/width overrides are intentionally omitted — CSS handles responsive sizing.
   if (targetElement instanceof HTMLElement) {
     copyMediaSizingStyle(sourceElement, targetElement);
   }
 
-  if (targetElement.matches('img') && targetElement instanceof HTMLElement) {
-    targetElement.style.height = computedHeight;
-    targetElement.style.maxHeight = 'none';
-    targetElement.style.width = 'auto';
-    targetElement.style.maxWidth = '100%';
-    return;
-  }
-
-  const renderedMedia = targetElement.matches('video, iframe')
-    ? targetElement
-    : targetElement.querySelector('video, iframe');
-
-  if (targetElement.matches('.detail-editor-video') && targetElement instanceof HTMLElement) {
-    targetElement.style.height = 'auto';
-    targetElement.style.maxWidth = '100%';
-  }
-
-  if (renderedMedia instanceof HTMLElement) {
-    renderedMedia.style.setProperty('height', computedHeight, 'important');
-    renderedMedia.style.setProperty('max-height', 'none', 'important');
-    renderedMedia.style.setProperty('width', 'auto', 'important');
-    renderedMedia.style.setProperty('max-width', '100%', 'important');
-  }
-
-  const ckWrapper = targetElement.closest('.ck-media__wrapper') || targetElement.querySelector('.ck-media__wrapper');
-  if (ckWrapper instanceof HTMLElement) {
-    ckWrapper.style.setProperty('max-height', 'none', 'important');
-    ckWrapper.style.setProperty('overflow', 'visible', 'important');
+  // Propagate to inner wrapper/video for CKEditor media embed blocks
+  if (!targetElement.matches('img, video, iframe')) {
+    const inner = targetElement.querySelector('.detail-editor-video');
+    if (inner instanceof HTMLElement) {
+      copyMediaSizingStyle(sourceElement, inner);
+    }
   }
 }
 
@@ -1229,6 +1201,10 @@ function syncRenderedMediaAttributesFromSource(sectionKey, sourceHtml) {
   const binding = getEditorBinding(sectionKey);
   const editableRoot = binding?.editableRoot;
   if (!binding || !editableRoot) return;
+
+  // Guard against re-entrant calls triggered by MutationObserver observing our own DOM changes
+  if (binding._mediaSyncing) return;
+  binding._mediaSyncing = true;
 
   const sourceWrapper = document.createElement('div');
   sourceWrapper.innerHTML = normalizeMediaMarkup(sourceHtml);
@@ -1314,6 +1290,8 @@ function syncRenderedMediaAttributesFromSource(sectionKey, sourceHtml) {
     if (marginLeft) renderedFigure.style.setProperty('margin-left', marginLeft);
     if (marginRight) renderedFigure.style.setProperty('margin-right', marginRight);
   });
+
+  binding._mediaSyncing = false;
 }
 
 function scheduleRenderedMediaSync(sectionKey, sourceHtml, attempt = 0) {
