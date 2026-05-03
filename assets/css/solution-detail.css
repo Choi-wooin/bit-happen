@@ -272,16 +272,16 @@ h2.rich-section-title {
 .rich-section-body video.detail-media-size,
 .rich-section-body iframe.detail-media-size,
 .rich-section-body .detail-editor-video.detail-media-size video {
-  width: auto;
+  width: var(--detail-media-width-pc, 100%);
   max-width: 100%;
-  height: var(--detail-media-height-pc, var(--detail-image-height-pc, var(--detail-image-height, auto)));
+  height: auto;
   max-height: none;
   object-fit: contain;
 }
 
 .rich-section-body .detail-editor-video.detail-media-size {
   display: inline-flex;
-  width: fit-content;
+  width: var(--detail-media-width-pc, 100%);
   max-width: 100%;
   border: 1px solid var(--line);
   background: #0e1722;
@@ -289,7 +289,8 @@ h2.rich-section-title {
 }
 
 .rich-section-body .detail-editor-video.detail-media-size video {
-  width: auto;
+  width: 100%;
+  height: auto;
   flex: 0 0 auto;
 }
 
@@ -316,7 +317,8 @@ h2.rich-section-title {
   .rich-section-body video.detail-media-size,
   .rich-section-body iframe.detail-media-size,
   .rich-section-body .detail-editor-video.detail-media-size video {
-    height: var(--detail-media-height-tablet, calc(var(--detail-media-height-pc, 360px) * var(--detail-media-tablet-ratio, 0.8)));
+    width: min(var(--detail-media-width-pc, 100%), 100%);
+    height: auto;
   }
 }
 
@@ -333,7 +335,8 @@ h2.rich-section-title {
   .rich-section-body video.detail-media-size,
   .rich-section-body iframe.detail-media-size,
   .rich-section-body .detail-editor-video.detail-media-size video {
-    height: var(--detail-media-height-phone, calc(var(--detail-media-height-pc, 360px) * var(--detail-media-phone-ratio, 0.62)));
+    width: 100%;
+    height: auto;
   }
 }
 

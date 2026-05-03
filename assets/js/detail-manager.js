@@ -173,7 +173,7 @@ function buildEditorMediaUrl(sourceElement, url) {
 function encodeEditorMediaMeta(sourceElement) {
   if (!(sourceElement instanceof Element)) return '';
 
-  const pc = String(sourceElement.style.getPropertyValue('--detail-media-height-pc') || '').trim();
+  const pc = String(sourceElement.style.getPropertyValue('--detail-media-width-pc') || '').trim();
   const tablet = String(sourceElement.style.getPropertyValue('--detail-media-tablet-ratio') || '').trim();
   const phone = String(sourceElement.style.getPropertyValue('--detail-media-phone-ratio') || '').trim();
   const parts = [];
@@ -190,7 +190,7 @@ function parseEditorMediaMeta(url) {
   const cleanUrl = stripEditorMediaMeta(raw);
   const result = {
     cleanUrl,
-    pcHeight: '',
+    pcWidth: '',
     tabletRatio: '',
     phoneRatio: '',
   };
@@ -203,7 +203,7 @@ function parseEditorMediaMeta(url) {
     const key = part.slice(0, separatorIndex);
     const value = part.slice(separatorIndex + 1);
     if (!key || !value) return;
-    if (key === 'pc') result.pcHeight = value;
+    if (key === 'pc') result.pcWidth = value;
     if (key === 'tb') result.tabletRatio = value;
     if (key === 'ph') result.phoneRatio = value;
   });
@@ -212,15 +212,10 @@ function parseEditorMediaMeta(url) {
 
 function buildEditorMediaStyleFromMeta(meta) {
   const parts = [];
-  if (meta.pcHeight) parts.push(`--detail-media-height-pc: ${meta.pcHeight}`);
+  if (meta.pcWidth) parts.push(`--detail-media-width-pc: ${meta.pcWidth}`);
   if (meta.tabletRatio) parts.push(`--detail-media-tablet-ratio: ${meta.tabletRatio}`);
   if (meta.phoneRatio) parts.push(`--detail-media-phone-ratio: ${meta.phoneRatio}`);
   return parts.join('; ');
-}
-
-function computeMetaPixelHeight(meta) {
-  const pcHeight = parseInt(meta.pcHeight) || 360;
-  return Math.max(120, pcHeight);
 }
 
 function validateUploadFile(file, type) {
@@ -824,7 +819,7 @@ function convertFigureMediaToVideoBlock(figure) {
 
   const wrapper = document.createElement('div');
   wrapper.className = 'detail-editor-video detail-media-size';
-  wrapper.style.setProperty('--detail-media-height-pc', '360px');
+  wrapper.style.setProperty('--detail-media-width-pc', '100%');
 
   const video = document.createElement('video');
   video.setAttribute('controls', 'controls');
@@ -841,13 +836,17 @@ function convertFigureMediaToVideoBlock(figure) {
   return wrapper;
 }
 
-function applyMediaHeightToElement(element, heightPx) {
+function applyMediaWidthToElement(element, widthValue) {
   if (!element) return;
 
-  const normalizedHeight = `${Math.max(120, Number(heightPx || 0))}px`;
+  // widthValue: px 숫자(정수) 또는 '100%' 같은 문자열 허용
+  const normalized = String(widthValue).trim().endsWith('%')
+    ? String(widthValue).trim()
+    : `${Math.max(40, Number(widthValue) || 100)}px`;
+
   if (element.matches('img')) {
     element.classList.add('detail-image-size', 'detail-media-size');
-    element.style.setProperty('--detail-media-height-pc', normalizedHeight);
+    element.style.setProperty('--detail-media-width-pc', normalized);
     return;
   }
 
@@ -855,16 +854,18 @@ function applyMediaHeightToElement(element, heightPx) {
   if (!(target instanceof Element)) return;
   target.classList.add('detail-media-size');
   if (target.matches('.detail-editor-video')) {
-    target.style.setProperty('--detail-media-height-pc', normalizedHeight);
+    target.style.setProperty('--detail-media-width-pc', normalized);
   }
 }
 
-function applySelectedMediaSize(sectionKey, heightPx) {
+function applySelectedMediaSize(sectionKey, widthValue) {
   const binding = getEditorBinding(sectionKey);
   if (!binding) return false;
 
-  if (!Number.isFinite(Number(heightPx)) || Number(heightPx) <= 0) {
-    setMessage('유효한 높이(px)를 입력해 주세요.');
+  const isPercent = String(widthValue).trim().endsWith('%');
+  const numVal = Number(String(widthValue).trim());
+  if (!isPercent && (!Number.isFinite(numVal) || numVal <= 0)) {
+    setMessage('유효한 너비(px 또는 %)를 입력해 주세요.');
     return false;
   }
 
@@ -875,17 +876,18 @@ function applySelectedMediaSize(sectionKey, heightPx) {
   const target = Number.isInteger(mediaIndex) ? mediaElements[mediaIndex] : null;
 
   if (!target) {
-    setMessage('크기를 바꿀 이미지나 동영상을 먼저 클릭해 주세요.');
+    setMessage('너비를 바꿀 이미지나 동영상을 먼저 클릭해 주세요.');
     return false;
   }
 
-  applyMediaHeightToElement(target, heightPx);
+  applyMediaWidthToElement(target, widthValue);
   setEditorHtml(sectionKey, wrapper.innerHTML);
-  setMessage(`선택한 미디어 높이를 ${Math.max(120, Number(heightPx || 0))}px로 변경했습니다.`, false);
+  const displayVal = isPercent ? String(widthValue).trim() : `${Math.max(40, numVal)}px`;
+  setMessage(`선택한 미디어 너비를 ${displayVal}로 변경했습니다.`, false);
   return true;
 }
 
-function getSelectedMediaCurrentHeight(sectionKey) {
+function getSelectedMediaCurrentWidth(sectionKey) {
   const binding = getEditorBinding(sectionKey);
   if (!binding) return '';
   const mediaIndex = Number(binding.selectedMediaIndex);
@@ -896,8 +898,8 @@ function getSelectedMediaCurrentHeight(sectionKey) {
   const mediaElements = getSelectableMediaElements(wrapper);
   const target = mediaElements[mediaIndex];
   if (target) {
-    const h = target.style.getPropertyValue('--detail-media-height-pc');
-    if (h) { const n = parseInt(h, 10); if (n > 0) return n; }
+    const w = target.style.getPropertyValue('--detail-media-width-pc');
+    if (w) return w;
   }
 
   const editableRoot = binding.editableRoot;
@@ -905,23 +907,33 @@ function getSelectedMediaCurrentHeight(sectionKey) {
     const liveMedia = getSelectableMediaElements(editableRoot);
     const liveTarget = liveMedia[mediaIndex];
     if (liveTarget) {
-      const h = liveTarget.style.getPropertyValue('--detail-media-height-pc');
-      if (h) { const n = parseInt(h, 10); if (n > 0) return n; }
-      const computed = liveTarget.getBoundingClientRect().height;
-      if (computed > 0) return Math.round(computed);
+      const w = liveTarget.style.getPropertyValue('--detail-media-width-pc');
+      if (w) return w;
+      const computed = liveTarget.getBoundingClientRect().width;
+      if (computed > 0) return `${Math.round(computed)}px`;
     }
   }
   return '';
 }
 
+function getEditorMaxWidthPx(sectionKey) {
+  const binding = getEditorBinding(sectionKey);
+  if (!binding || !binding.editableRoot) return null;
+  const rect = binding.editableRoot.getBoundingClientRect();
+  return rect.width > 0 ? Math.round(rect.width) : null;
+}
+
 function promptAndApplyMediaSize(sectionKey) {
-  const currentHeight = getSelectedMediaCurrentHeight(sectionKey);
-  const defaultVal = currentHeight || '600';
-  const input = window.prompt(`PC 높이(px)를 입력해 주세요.${currentHeight ? ' (현재: ' + currentHeight + 'px)' : ''}`, String(defaultVal));
+  const currentWidth = getSelectedMediaCurrentWidth(sectionKey);
+  const maxWidth = getEditorMaxWidthPx(sectionKey);
+  const defaultVal = currentWidth || '100%';
+  const maxHint = maxWidth ? ` (에디터 최대 너비: ${maxWidth}px)` : '';
+  const currentHint = currentWidth ? ` (현재: ${currentWidth})` : '';
+  const input = window.prompt(`PC 너비를 입력해 주세요. px 또는 % 사용 가능.${maxHint}${currentHint}`, String(defaultVal));
   if (input === null) return;
 
-  const heightPx = Number(String(input).trim());
-  applySelectedMediaSize(sectionKey, heightPx);
+  const raw = String(input).trim();
+  applySelectedMediaSize(sectionKey, raw);
 }
 
 function selectSourceRange(sectionKey, start, end) {
@@ -2104,10 +2116,9 @@ async function createEditorBindings() {
                 const meta = parseEditorMediaMeta(match[0]);
                 const videoUrl = escapeHtml(meta.cleanUrl);
                 const style = buildEditorMediaStyleFromMeta(meta);
-                const videoHeight = computeMetaPixelHeight(meta);
                 return [
-                  '<div class="detail-editor-video detail-media-size" data-oembed-url="' + videoUrl + '"' + (style ? ' style="' + escapeHtml(style) + '"' : ' style="--detail-media-height-pc: 360px;"') + '>',
-                  '  <video controls playsinline preload="metadata" src="' + videoUrl + '" style="height: ' + videoHeight + 'px; max-height: none; width: auto; max-width: 100%;">',
+                  '<div class="detail-editor-video detail-media-size" data-oembed-url="' + videoUrl + '"' + (style ? ' style="' + escapeHtml(style) + '"' : ' style="--detail-media-width-pc: 100%;"') + '>',
+                  '  <video controls playsinline preload="metadata" src="' + videoUrl + '" style="width: 100%; height: auto;">',
                   '    <source src="' + videoUrl + '" />',
                   '  </video>',
                   '</div>',
