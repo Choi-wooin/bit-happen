@@ -45,9 +45,15 @@ function getDetailMediaBaseUrl() {
   return `${getPreferredMediaProtocol()}//${DETAIL_MEDIA_HOST}`;
 }
 
-function getDetailMediaUploadUrl(type) {
+function getDetailMediaUploadCandidates(type) {
   const folder = type === 'video' ? 'videos' : 'images';
-  return `${getDetailMediaBaseUrl()}/upload/${folder}`;
+  const singular = type === 'video' ? 'video' : 'image';
+  const baseUrl = getDetailMediaBaseUrl();
+  return [
+    `${baseUrl}/upload/${folder}`,
+    `${baseUrl}/upload/${singular}`,
+    `${baseUrl}/upload`,
+  ];
 }
 
 const GROUP_LABELS = {
@@ -243,23 +249,51 @@ function extractUploadedMediaUrl(result, type) {
 }
 
 async function uploadEditorMedia(blob, type) {
-  const uploadUrl = getDetailMediaUploadUrl(type);
   const uploadFileName = buildUploadFileName(blob, type);
   validateUploadFile(blob, type);
-  const formData = new FormData();
-  formData.append('file', blob, uploadFileName);
+  const uploadCandidates = getDetailMediaUploadCandidates(type);
+  let lastStatus = '';
+  let lastError = null;
+  let lastTriedUrl = '';
 
-  const response = await fetch(uploadUrl, {
-    method: 'POST',
-    body: formData,
-  });
+  for (const uploadUrl of uploadCandidates) {
+    try {
+      lastTriedUrl = uploadUrl;
+      const formData = new FormData();
+      formData.append('file', blob, uploadFileName);
+      // Generic /upload endpoints may use this hint to classify destination folder.
+      formData.append('folder', type === 'video' ? 'videos' : 'images');
+      formData.append('type', type);
 
-  if (!response.ok) {
-    throw new Error(`${type === 'video' ? '동영상' : '이미지'} 업로드 실패: ${response.status}`);
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        lastStatus = String(response.status);
+        // Only retry on endpoint-not-found. Other errors should surface immediately.
+        if (response.status !== 404) {
+          throw new Error(`${type === 'video' ? '동영상' : '이미지'} 업로드 실패: ${response.status} (${uploadUrl})`);
+        }
+        continue;
+      }
+
+      const result = await response.json();
+      return extractUploadedMediaUrl(result, type);
+    } catch (error) {
+      lastError = error;
+      if (String(error?.message || '').includes('업로드 실패')) {
+        throw error;
+      }
+    }
   }
 
-  const result = await response.json();
-  return extractUploadedMediaUrl(result, type);
+  if (lastError) {
+    throw lastError;
+  }
+
+  throw new Error(`${type === 'video' ? '동영상' : '이미지'} 업로드 실패: ${lastStatus || '404'} (${lastTriedUrl || uploadCandidates[0]})`);
 }
 
 function setMessage(text, isError = true) {
