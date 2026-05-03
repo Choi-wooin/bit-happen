@@ -23,6 +23,10 @@ let overrideState = {};
 const editorBindings = new Map();
 const mediaSizingCache = new Map();
 let pendingVideoUploadSectionKey = '';
+const preferredUploadUrlByType = {
+  image: '',
+  video: '',
+};
 
 function setEditorHostStatus(text) {
   const messageHtml = `<div class="editor-init-error">${escapeHtml(text)}</div>`;
@@ -49,11 +53,15 @@ function getDetailMediaUploadCandidates(type) {
   const folder = type === 'video' ? 'videos' : 'images';
   const singular = type === 'video' ? 'video' : 'image';
   const baseUrl = getDetailMediaBaseUrl();
-  return [
+  const candidates = [
+    `${baseUrl}/upload`,
     `${baseUrl}/upload/${folder}`,
     `${baseUrl}/upload/${singular}`,
-    `${baseUrl}/upload`,
   ];
+
+  const preferred = preferredUploadUrlByType[type] || '';
+  if (!preferred) return candidates;
+  return [preferred, ...candidates.filter((url) => url !== preferred)];
 }
 
 const GROUP_LABELS = {
@@ -280,6 +288,7 @@ async function uploadEditorMedia(blob, type) {
       }
 
       const result = await response.json();
+      preferredUploadUrlByType[type] = uploadUrl;
       return extractUploadedMediaUrl(result, type);
     } catch (error) {
       lastError = error;
